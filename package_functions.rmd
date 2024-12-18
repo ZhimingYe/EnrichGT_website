@@ -1,0 +1,38 @@
+---
+title: "EnrichGT Package Document"
+output:
+  book:
+    options:
+      toc: true
+      number_sections: true
+      embed_resources: true
+    meta:
+      css: ["default", "@heading-anchor"]
+      js: ["@heading-anchor"]
+knit: litedown:::knit
+---
+
+
+
+# Appendix {.appendix}
+
+## [Back to Package Homepage](index.html)
+
+## Package Metadata
+
+```{r, echo = FALSE}
+litedown::pkg_desc("EnrichGT")
+```
+
+## Manual pages
+
+```{r, echo = FALSE}
+litedown::pkg_manual("EnrichGT")
+```
+
+## News
+
+```{r, echo = FALSE}
+litedown::pkg_news("EnrichGT")  # show full news
+```
+
