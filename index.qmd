@@ -4,7 +4,6 @@ author: "Zhiming Ye"
 date: "2024-12-18"
 format: 
   html:
-    embed-resources: true
     code-overflow: wrap
     mermaid: 
       theme: neutral
