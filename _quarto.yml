@@ -14,7 +14,7 @@ website:
   announcement:
     icon: info-circle
     dismissable: false
-    content: "**EnrichGT <- ** Fast, light weight enrichment analysis + explainable re-clustered HTML tables"
+    content: "**Version 0.5** Release (2024-12)"
     type: primary
     position: below-navbar
 format:

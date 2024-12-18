@@ -8,7 +8,7 @@ format:
     mermaid: 
       theme: neutral
 toc: true
-toc-depth: 5
+toc-depth: 3
 toc-expand: true
 ---
 
@@ -23,7 +23,19 @@ file.rename("package_functions.html","./_site/package_functions.html")
 
 # Overview
 
-The functions from `EnrichGT` are starting with "egt_" or "database_". 
+## Highlights
+
+-   Efficient C++-based functions for rapid enrichment analysis;
+
+-   Simple input format, empowering new bioinformatic users;
+
+-   Re-clustering of enriched results provides clear and actionable insights
+
+-   User-friendly HTML output docs that is easy to read and interpret
+
+## Workflows
+
+The functions from `EnrichGT` are starting with "egt\_" or "database\_".
 
 ```{mermaid}
 
@@ -196,7 +208,7 @@ res <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,
                          )
 ```
 
-## Featured Function
+## Re-ENRICH Function
 
 ### Enrichment of Enriched Results
 
@@ -372,7 +384,7 @@ test_reload <- database_GO_MF(org.Hs.eg.db)
 
 # Future development plan
 
-Version 0.5 is freeze in Dec 19th 2024. 
+Version 0.5 is freeze in Dec 19th 2024.
 
 Version 0.6 targets (Will be starting in 2024-12-25)
 
