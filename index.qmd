@@ -1,7 +1,7 @@
 ---
 title: "EnrichGT Documents"
 author: "Zhiming Ye"
-date: "2024-12-18"
+date: "2024-12-21"
 format: 
   html:
     code-overflow: wrap
@@ -23,23 +23,24 @@ file.rename("package_functions.html","./_site/package_functions.html")
 
 # Overview
 
-## Highlights
+::: callout-tip
+### What is EnrichGT?
 
--   Efficient C++-based functions for rapid enrichment analysis;
-
--   Simple input format, empowering new bioinformatic users;
-
--   Re-clustering of enriched results provides clear and actionable insights
-
--   User-friendly HTML output docs that is easy to read and interpret
-
-## Workflows
-
-The functions from `EnrichGT` are starting with "egt\_" or "database\_".
+| EnrichGT means [enrich]{.underline}ed previously enriched results ($E^2_{\text{enrich}}$) into [g]{.underline}reat [t]{.underline}ables and more ... |
+|------------------------------------------------------------------------|
+| Efficient C++-based functions for rapid enrichment analysis |
+| Simple input format, empowering non-pro users |
+| Re-clustering of enriched results provides clear and actionable insights |
+| User-friendly HTML output docs that is easy to read and interpret |
+:::
 
 ```{mermaid}
 
 graph LR
+    
+    M[genes]
+    N[genes with weights]
+    
     subgraph Enrichment Analysis
         A[egt_enrichment_analysis]
         B[egt_gsea_analysis]
@@ -64,10 +65,13 @@ graph LR
         
         I[egt_infer]
     end
-
+    
+    M --> A
+    N --> B
+    
     D --> A
     D --> B
-
+    
     A --> C[Enriched Result]
     B --> C
 
@@ -87,6 +91,8 @@ graph LR
 
 
 ```
+
+^The functions from EnrichGT are starting with “egt\_” or “database\_”.^
 
 # Install EnrichGT
 
@@ -117,6 +123,8 @@ You can use `? function` to get further help when installed.
 ```
 :::
 
+In most examples of this document, we use a result table of DEG analysis `DEG.csv`. The gene symbols of `DEG.csv` is on the first column without column name. In default `read_csv()` convert the unamed column name to `...1`. So `DEGtable$...1` refers to gene symbols.
+
 ## Core Function
 
 ### Enrichment of genes
@@ -135,11 +143,11 @@ Furthermore, The pre-processing step of the hypergeometric test in EnrichGT’s 
 
 ``` r
 res <- egt_enrichment_analysis(genes = DEGtable$Genes,
-database = database_GO_BP())
+database = database_GO_BP(org.Hs.eg.db))
 
 res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",
                                          "You can add more genes"),
-database = database_GO_ALL())
+database = database_Reactome(org.Hs.eg.db))
 
 res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",
                                          "You can add more genes"),
@@ -187,6 +195,8 @@ Fibroblast=c("COL1A2","COL1A3"),"You can add more groups"),
 
 Genes with specific weights (e.g. the log2FC) can use GSEA method. It should input a pre-ranked geneset. This use `C++` accelerated `fgsea::fgsea()` as backend, so it is also very fast.
 
+This provides a quick display of NES, p-values, and leading-edge genes. This function uses the same backend as the industry-standard `clusterProfiler` (it is also implemented using the [fgsea](https://github.com/ctlab/fgsea) package). However, `EnrichGT` does not delve as deeply as `clusterProfiler` and lacks advanced visualization capabilities. While it may not be sufficient for bioinformatics experts, the current implementation is adequate for wet-lab researchers. If comprehensive analysis is required, consider using `clusterProfiler.` However, if you only need an overview and reclustering, `EnrichGT` may be enough.
+
 ::: callout-note
 #### How to build pre-ranked gene set?
 
@@ -198,7 +208,7 @@ Genes with specific weights (e.g. the log2FC) can use GSEA method. It should inp
 res <- egt_gsea_analysis(genes = 
                            genes_with_weights(genes = DEG$genes, 
                                               weights = DEG$log2FoldChange),
-                         database = database_GO_BP()
+                         database = database_GO_BP(org.Hs.eg.db)
                          )
 
 # From PCA
@@ -213,6 +223,10 @@ res <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,
 ### Enrichment of Enriched Results
 
 The enriched result is too messy? Clean up it!
+
+EnrichGT generates insightful results by simply constructing a term frequency matrix of genes enriched in pathways and performing clustering. While the results may not be statistically optimal, they offer significant interpretive insights.
+
+Print `?egt_recluster_analysis` for further help. But of note, you can adjust `ClusterNum` (Cluster the enrichment into N clusters) and `nTop` (Show how many top items in GT table) for a better result (the default is not all the best for your data).
 
 ::: callout-tip
 #### Form clusterProfiler ?
@@ -262,7 +276,7 @@ The main purpose of developing this package is to provide a **lightweight and pr
 ``` r
 # From results generated before
 res <- egt_enrichment_analysis(genes = DEGtable$Genes,
-database = database_GO_BP())
+database = database_GO_BP(Org.Hs.eg.db))
 
 re_enrichment_results <- egt_recluster_analysis(
   res,
@@ -281,17 +295,88 @@ re_enrich <- egt_recluster_analysis(ora_result)
 
 You can see the structure of `egt_obj`. The first slot is the result table, and the second slot contains gt table.
 
+::: callout-tip
+#### How to get objects inside the S4 object?
+
+You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@gt_object` returns a `gt` object.
+:::
+
 ```{r}
 str(re_enrich,max.level = 2)
 ```
 
-## HTML reports (gt table)
+You can simple `View(re_enrich@enriched_result)` for the first slot, but EnrichGT offers more than data frames. Please see [HTML reports (gt table)](#html-reports-gt-table) for further visualization.
 
-Also, because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `gt` HTML tables. This only supports the re-enriched results.
+## Functions to FUSING results
+
+### Enrichment analysis using multiple databases
+
+Some enrichment analysis tools like [Metascape](https://metascape.org/gp/index.html) can provide multi-database analysis in one-click (e.g. combining GO, KEGG, Reactome... ). EnrichGT also provides a similar function to achieve this (**fuse** them). You can provide a list containing multiple enrichment results form `EnrichGT` or `clusterProfiler` into `egt_recluster_analysis`.
+
+::: callout-important
+Of note, all enriched objects in the same list should from **the same** gene source. Like the below example, both the `res1` and `res2` are enriched results from `DEGtable$Genes`.
+:::
+
+Example:
+
+``` r
+res1 <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = database_GO_BP(org.Hs.eg.db))
+
+res2 <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = database_Reactome(org.Hs.eg.db))
+
+Fused_enrich <- egt_recluster_analysis(list(res1,res2))
+```
+
+After this, you can generate HTML tables to view the fused result (See the [HTML reports (gt table)](#html-reports-gt-table)).
+
+### Reversed gene sources analyzed by same database
+
+This is a less meticulously crafted feature that performs re-clustering analysis by categorizing and considering various cases, such as intersections, unions, and unrelated sets. The result is a list containing four `EnrichGT_obj` objects with overlapped enriched terms, unique enrich terms.
+
+``` r
+# See ?egt_compare_groups for further helps
+Result_List <- egt_compare_groups(
+  obj.test,
+  obj.ctrl,
+  name.test = NULL,
+  name.ctrl = NULL,
+  ClusterNum = 15,
+  P.adj = 0.05,
+  force = F,
+  nTop = 10,
+  method = "ward.D2",
+)
+```
+
+Example:
+
+```{r}
+#| message: false
+#| warning: false
+DEGexample_UpReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange>0.7)
+DEGexample_DownReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange<(-0.7))
+ora_resultUP <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
+ora_resultDown <- egt_enrichment_analysis(genes = DEGexample_DownReg$...1,database = database_GO_BP(org.Hs.eg.db))
+Compared_Result <- egt_compare_groups(ora_resultUP,ora_resultDown)
+```
+
+You can use `str(Result_List)` to explore what is inside the list. All object insided it is basic `EnrichGT_obj`, you can then use the functions from other sections of this tutorial for similar visualizations.
+
+```{r}
+str(Compared_Result,max.level = 2)
+```
+
+## HTML reports (gt table) {#html-reports-gt-table}
+
+Because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `gt` HTML tables. This only supports the re-enriched results.
+
+You can simple input the object name of re-enriched object or fused object, to show the table.
 
 ![](enrichGTTable.jpg)
 
-The `gt_object` is a pure object of `gt` package, you can use any [function](https://gt.rstudio.com/reference/index.html) on it, like:
+This just shows the second slot inside the `EnrichGT_obj` object. The second slot - `gt_object` is a pure object of `gt` package, you can use any [function](https://gt.rstudio.com/reference/index.html) on it, like:
 
 ``` r
 re_enrichment_results@gt_object |> gt_save("test.html") # Save it use basic gt functions. 
@@ -313,7 +398,7 @@ HTML `gt` table satisfied most of things, but for others. Though we don't want t
 
 ```{r}
 #| fig-width: 7
-#| fig-height: 10
+#| fig-height: 11
 egt_plot_results(re_enrich)
 ```
 
@@ -353,6 +438,17 @@ database_GO_BP(OrgDB = org.Hs.eg.db)
 
 `database_Reactome()`
 
+#### WikiPathway Database
+
+WikiPathway database provides pre-built GMT files (<https://data.wikipathways.org/current/gmt/>). In default they are recorded as `ENTREZ IDs`, so you need to provide proper species database (e.g. org.Hs.eg.db for human), to `database_from_gmt` function and EnrichGT will automatically convert `ENTREZ IDs` to gene symbols for enrichment analysis.
+
+``` r
+download.file("https://data.wikipathways.org/current/gmt/wikipathways-20241210-gmt-Homo_sapiens.gmt",destfile = "WikiPWS_human.gmt")
+WikiPWsDB <- database_from_gmt("WikiPWS_human.gmt",OrgDB=org.Hs.eg.db)
+res <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = WikiPWsDB)
+```
+
 #### Progeny Database
 
 For pathway activity infer, `database_progeny_human()` and `database_progeny_mouse()`
@@ -361,7 +457,7 @@ For pathway activity infer, `database_progeny_human()` and `database_progeny_mou
 
 For Transcript Factors infer, `database_CollecTRI_human()` and `database_CollecTRI_mouse()`
 
-### Read Addition Gene Sets from local
+### Read Addition Gene Sets from local GMT files
 
 EnrichGT supports reading `GMT` files, You can obtain `GMT` files from [MsigDB](https://www.gsea-msigdb.org/gsea/msigdb/index.jsp).
 
@@ -369,34 +465,50 @@ EnrichGT supports reading `GMT` files, You can obtain `GMT` files from [MsigDB](
 database_from_gmt("Path_to_your_Gmt_file.gmt")
 ```
 
+In default, `database_from_gmt` will try to convert the numeric ids to gene symbols (as they are usually the `ENTREZ IDs`, you can disable this by passing `convert_2_symbols = F` ).
+
+### Read Addition Gene Sets from local data tables
+
+The result of any `database_***` functions are `data.frame`s. So you can simple read any data tables and use them for any enrichment function.
+
+The typical input should be:
+
+| IDs | Term                | Genes                  |
+|-----|---------------------|------------------------|
+| ID1 | Biological Pathway1 | Gene1, Gene2, Gene3... |
+| ID2 | Biological Pathway2 | Gene4, Gene2, Gene3... |
+| ... | ...                 | ...                    |
+
+or
+
+| Term                | Genes                  |
+|---------------------|------------------------|
+| Biological Pathway1 | Gene1, Gene2, Gene3... |
+| Biological Pathway2 | Gene4, Gene2, Gene3... |
+| ...                 | ...                    |
+
+Example:
+
+``` r
+library(readr)
+db <- read_csv("you_gene_set.csv")
+res <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = db)
+```
+
+### Gene Annotation Converter
+
+You can use `convert_annotations_genes()` to convert gene annotations from any keys to any keys.
+
+Example:
+
+```{r}
+convert_annotations_genes(DEGexample_UpReg$...1[1:10], from_what="SYMBOL", to_what=c("ENTREZID","ENSEMBL","GENENAME"), OrgDB=org.Hs.eg.db)
+```
+
 ### Where is KEGG?
 
 KEGG limited the commercial usage. And you should use the `KEGG REST` API to download it. I have no time to achieve it now. But you can use KEGG Database from [MsigDB](https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp#C2) instead ([KEGG_MED](https://www.gsea-msigdb.org/gsea/msigdb/human/genesets.jsp?collection=CP:KEGG_MEDICUS) and [KEGG_Classical](https://www.gsea-msigdb.org/gsea/msigdb/human/genesets.jsp?collection=CP:KEGG_LEGACY)).
-
-### Reading is slow?
-
-From `0.5.0`, EnrichGT implemented a cache system. So when load a same database the second time, it will be much faster.
-
-```{r}
-test <- database_GO_MF(org.Hs.eg.db)
-test_reload <- database_GO_MF(org.Hs.eg.db)
-```
-
-# Future development plan
-
-Version 0.5 is freeze in Dec 19th 2024.
-
-Version 0.6 targets (Will be starting in 2024-12-25)
-
--   support KEGG online reading
-
--   Add simple network plot like `cnetplot`
-
--   Add drawing function for `egt_infer()`
-
--   Better dot plot
-
--   Self-built gene converter
 
 # Acknowledgement
 

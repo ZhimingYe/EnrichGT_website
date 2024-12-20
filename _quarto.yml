@@ -14,7 +14,7 @@ website:
   announcement:
     icon: info-circle
     dismissable: false
-    content: "**Version 0.5** Release (2024-12)"
+    content: "**Version 0.6 Release (2024-12)**  This version contains fix of a key bug, so please update. "
     type: primary
     position: below-navbar
 format:
