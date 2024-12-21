@@ -1,5 +1,5 @@
 ---
-title: "EnrichGT Documents"
+title: "EnrichGT"
 author: "Zhiming Ye"
 format: 
   html:
@@ -113,7 +113,7 @@ The `AnnotationDbi`, `fgsea`, `reactome.db` and `GO.db` were from BioConductor a
 # Meet EnrichGT
 
 ::: callout-important
-See [package function page](package_functions.html) for further information (For example, how to use a function)
+See [package function page](pkgfuns.html) for further information (For example, how to use a function)
 
 You can use `? function` to get further help when installed.
 
