@@ -7,16 +7,13 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: package_functions.html
+      - href: pkgfuns.qmd
         text: Package Functions
       - href: https://github.com/ZhimingYe/EnrichGT/
         text: Github
-  announcement:
-    icon: info-circle
-    dismissable: false
-    content: "**Version 0.6 Release (2024-12)**  This version contains fix of a key bug, so please update. "
-    type: primary
-    position: below-navbar
+      - href: preface.qmd
+        text: Motivation
+
 format:
   html:
     theme: cosmo

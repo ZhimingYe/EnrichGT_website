@@ -1,7 +1,6 @@
 ---
 title: "EnrichGT Documents"
 author: "Zhiming Ye"
-date: "2024-12-21"
 format: 
   html:
     code-overflow: wrap
@@ -16,9 +15,8 @@ toc-expand: true
 #| message: false
 #| warning: false
 #| include: false
-library(litedown)
-litedown::fuse("./package_functions.rmd")
-file.rename("package_functions.html","./_site/package_functions.html")
+library(Rd2md)
+render_refman("../EnrichGT/","./pkgfuns.qmd")
 ```
 
 # Overview
@@ -26,12 +24,13 @@ file.rename("package_functions.html","./_site/package_functions.html")
 ::: callout-tip
 ### What is EnrichGT?
 
-| EnrichGT means [enrich]{.underline}ed previously enriched results ($E^2_{\text{enrich}}$) into [g]{.underline}reat [t]{.underline}ables and more ... |
+| EnrichGT means [enrich]{.underline}ing previously enriched results ($E^2_{\text{enrich}}$) into [g]{.underline}reat [t]{.underline}ables and more ... |
 |------------------------------------------------------------------------|
-| Efficient C++-based functions for rapid enrichment analysis |
-| Simple input format, empowering non-pro users |
-| Re-clustering of enriched results provides clear and actionable insights |
-| User-friendly HTML output docs that is easy to read and interpret |
+| Efficient C++-based functions for **rapid enrichment** analysis |
+| **Simple** input format, empowering non-pro users |
+| Re-clustering of enriched results provides **clear and actionable insights** |
+| User-friendly **HTML output** that is easy to read and interpret |
+| Do a series of things just in **ONE** package |
 :::
 
 ```{mermaid}
