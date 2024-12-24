@@ -93,6 +93,8 @@ graph LR
 
 ^The functions from EnrichGT are starting with “egt\_” or “database\_”.^
 
+After version 0.7.0 (2024-12-24), EnrichGT would be entering supported mode and perhaps without adding new functions. We want to keep this package lightweight with limited functions. If you need a tool that handles every detail, please use ***clusterProfiler*** instead. See [Acknowledgement] for details.
+
 # Install EnrichGT
 
 ``` r
@@ -153,7 +155,7 @@ res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",
 database = database_from_gmt("MsigDB_Hallmark.gmt"))
 ```
 
-Now, we load the necessary packages and example dataset, to provide you with an example. 
+Now, we load the necessary packages and example dataset, to provide you with an example.
 
 ```{r}
 #| message: false
@@ -169,13 +171,12 @@ DEGexample <- read_csv("./DEG.csv")
 DEGexample_UpReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange>0.7)
 ```
 
-Then we start ORA: 
+Then we start ORA:
 
 ```{r}
 ora_result <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
 ora_result |> as_tibble() # You don't need to call as_tibble, this is just for better printing
 ```
-
 
 ::: callout-tip
 #### Have many sources of genes?
@@ -190,6 +191,8 @@ Fibroblast=c("COL1A2","COL1A3"),"You can add more groups"),
 ```
 :::
 
+For visualize, see [Ploting ORA result] for details.
+
 ### Enrichment of weighted genes (GSEA)
 
 Genes with specific weights (e.g. the log2FC) can use GSEA method. It should input a pre-ranked geneset. This use `C++` accelerated `fgsea::fgsea()` as backend, so it is also very fast.
@@ -202,9 +205,9 @@ This provides a quick display of NES, p-values, and leading-edge genes. This fun
 `genes_with_weights(genes,weights)` function is used to build the pre-ranked gene set for GSEA analysis.
 :::
 
-Usually, GSEA use the `log2FoldChange` from DEG analysis as the weights of genes. This is an example: 
+Usually, GSEA use the `log2FoldChange` from DEG analysis as the weights of genes. This is an example:
 
-```{r} 
+```{r}
 resGSEA <- egt_gsea_analysis(genes = 
                            genes_with_weights(genes = DEGexample$...1, 
                                               weights = DEGexample$log2FoldChange),
@@ -213,7 +216,7 @@ resGSEA <- egt_gsea_analysis(genes =
 resGSEA |> as_tibble() # You don't need to call as_tibble, this is just for better printing
 ```
 
-Other kind of weights, like the loading from PCA or NMF, or the importance of random forest, can be also used. 
+Other kind of weights, like the loading from PCA or NMF, or the importance of random forest, can be also used.
 
 ``` r
 resExample <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,
@@ -221,6 +224,8 @@ resExample <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes
                          database = database_from_gmt("MsigDB_Hallmark.gmt")
                          )
 ```
+
+For visualize, see [Ploting GSEA result] for details.
 
 ## Re-ENRICH Function
 
@@ -330,7 +335,7 @@ EnrichGT supports inferring Pathway or Transcript Factors activity from re-enric
 -   [CollecTRI](https://github.com/saezlab/CollecTRI) is a comprehensive resource containing a curated collection of TFs and their transcriptional targets compiled from 12 different resources. This collection provides an increased coverage of transcription factors and a superior performance in identifying perturbed TFs compared to our previous.
 
 ::: {.callout-note collapse="true"}
-#### TF infering Example: 
+#### TF infering Example:
 
 ```{r}
 #| fig-width: 7
@@ -347,7 +352,6 @@ re_enrich_smaller_clusterNum <-
 TF_Act <- egt_infer_act(re_enrich_smaller_clusterNum,DB = "collectri", species = "human")
 egt_plot_results(TF_Act$Cluster_3)
 ```
-
 :::
 
 ::: callout-tip
@@ -456,7 +460,7 @@ HTML `gt` table satisfied most of things, but for others. Though we don't want t
 
 The Dot Plot provide basic viewing of results. So it supports both simple enrichment result `data.frame` and re-enriched `egt_object`.
 
-#### ORA
+#### Ploting ORA result
 
 ```{r}
 #| fig-width: 7
@@ -464,7 +468,7 @@ The Dot Plot provide basic viewing of results. So it supports both simple enrich
 egt_plot_results(ora_result)
 ```
 
-#### GSEA
+#### Ploting GSEA result
 
 ```{r}
 #| fig-width: 7
@@ -472,7 +476,7 @@ egt_plot_results(ora_result)
 egt_plot_results(resGSEA)
 ```
 
-#### re-enrichment
+#### Ploting re-enrichment result
 
 ```{r}
 #| fig-width: 7
@@ -482,7 +486,7 @@ egt_plot_results(re_enrich)
 
 ### Re-enrichment dimensionality reduction plot
 
-UMAP plot only supports re-enriched `egt_object`, to show the dimensionality reduction view of enriched results. 
+UMAP plot only supports re-enriched `egt_object`, to show the dimensionality reduction view of enriched results.
 
 ```{r}
 #| fig-width: 10

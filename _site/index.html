@@ -358,6 +358,7 @@ What is EnrichGT?
 </div>
 </div>
 <p><sup>The&nbsp;functions&nbsp;from&nbsp;EnrichGT&nbsp;are&nbsp;starting&nbsp;with&nbsp;“egt_”&nbsp;or&nbsp;“database_”.</sup></p>
+<p>After version 0.7.0 (2024-12-24), EnrichGT would be entering supported mode and perhaps without adding new functions. We want to keep this package lightweight with limited functions. If you need a tool that handles every detail, please use <strong><em>clusterProfiler</em></strong> instead. See <a href="#acknowledgement">Acknowledgement</a> for details.</p>
 </section>
 <section id="install-enrichgt" class="level1">
 <h1>Install EnrichGT</h1>
@@ -439,10 +440,10 @@ The difference from other tools
 <pre><code></code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ success loaded database, time used : 18.4080669879913 sec.</code></pre>
+<pre><code>✔ success loaded database, time used : 17.9219570159912 sec.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.136178970336914 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.138438940048218 sec.</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ora_result <span class="sc">|&gt;</span> <span class="fu">as_tibble</span>() <span class="co"># You don't need to call as_tibble, this is just for better printing</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -479,6 +480,7 @@ Have many sources of genes?
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a> <span class="at">database =</span> <span class="fu">database_from_gmt</span>(<span class="st">"panglaoDB.gmt"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
+<p>For visualize, see <a href="#ploting-ora-result">Ploting ORA result</a> for details.</p>
 </section>
 <section id="enrichment-of-weighted-genes-gsea" class="level3">
 <h3 class="anchored" data-anchor-id="enrichment-of-weighted-genes-gsea">Enrichment of weighted genes (GSEA)</h3>
@@ -512,24 +514,24 @@ How to build pre-ranked gene set?
 The order of those tied genes will be arbitrary, which may produce unexpected results.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Sucessful GSEA, time last 8.32670998573303 secs.</code></pre>
+<pre><code>✔ Sucessful GSEA, time last 8.16707611083984 secs.</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>resGSEA <span class="sc">|&gt;</span> <span class="fu">as_tibble</span>() <span class="co"># You don't need to call as_tibble, this is just for better printing</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3,920 × 7
+<pre><code># A tibble: 3,823 × 7
    ID         Description              ES   NES  pvalue p.adjust core_enrichment
    &lt;chr&gt;      &lt;chr&gt;                 &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;          
- 1 GO:0050907 detection of chemica… 0.767  2.02 6.91e-4 0.0111   OR51E1/CST1/OR…
- 2 GO:0007216 G protein-coupled gl… 0.840  1.98 3.79e-4 0.00717  GRIK3/GRM1/GRM…
- 3 GO:0060078 regulation of postsy… 0.564  1.94 1.88e-5 0.000632 GRIK3/HCN1/GRM…
- 4 GO:0050906 detection of stimulu… 0.594  1.93 1.23e-4 0.00311  OR51E1/CST1/OR…
- 5 GO:0007628 adult walking behavi… 0.717  1.92 7.00e-4 0.0112   ZIC1/CNTN2/CAC…
- 6 GO:0035249 synaptic transmissio… 0.560  1.92 1.51e-5 0.000536 GRIK3/UNC13C/G…
- 7 GO:0035235 ionotropic glutamate… 0.718  1.90 9.10e-4 0.0135   GRIK3/GRIA4/GR…
- 8 GO:0051966 regulation of synapt… 0.581  1.89 1.78e-4 0.00425  GRIK3/GRM1/CAC…
- 9 GO:0015669 gas transport         0.800  1.89 1.89e-3 0.0219   NGB/MB/RHBG/HB…
-10 GO:0045132 meiotic chromosome s… 0.587  1.89 2.40e-4 0.00515  SPATA22/KASH5/…
-# ℹ 3,910 more rows</code></pre>
+ 1 GO:0060078 regulation of postsy… 0.564  1.94 6.34e-6 0.000240 GRIK3/HCN1/GRM…
+ 2 GO:0050907 detection of chemica… 0.767  1.92 1.32e-4 0.00301  OR51E1/CST1/OR…
+ 3 GO:0035249 synaptic transmissio… 0.560  1.91 1.70e-5 0.000562 GRIK3/UNC13C/G…
+ 4 GO:0007216 G protein-coupled gl… 0.840  1.91 1.58e-4 0.00342  GRIK3/GRM1/GRM…
+ 5 GO:0050906 detection of stimulu… 0.594  1.90 6.25e-5 0.00164  OR51E1/CST1/OR…
+ 6 GO:0051966 regulation of synapt… 0.581  1.87 7.54e-5 0.00193  GRIK3/GRM1/CAC…
+ 7 GO:0007628 adult walking behavi… 0.717  1.87 3.85e-4 0.00657  ZIC1/CNTN2/CAC…
+ 8 GO:0061982 meiosis I cell cycle… 0.553  1.86 4.32e-5 0.00124  SPATA22/KASH5/…
+ 9 GO:0045132 meiotic chromosome s… 0.587  1.86 1.55e-4 0.00339  SPATA22/KASH5/…
+10 GO:0035235 ionotropic glutamate… 0.718  1.84 5.92e-4 0.00882  GRIK3/GRIA4/GR…
+# ℹ 3,813 more rows</code></pre>
 </div>
 </div>
 <p>Other kind of weights, like the loading from PCA or NMF, or the importance of random forest, can be also used.</p>
@@ -537,6 +539,7 @@ The order of those tied genes will be arbitrary, which may produce unexpected re
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                                                    <span class="at">weights =</span>PCA_res<span class="sc">$</span>PC1_loading),</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">database =</span> <span class="fu">database_from_gmt</span>(<span class="st">"MsigDB_Hallmark.gmt"</span>)</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>                         )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For visualize, see <a href="#ploting-gsea-result">Ploting GSEA result</a> for details.</p>
 </section>
 </section>
 <section id="re-enrich-function" class="level2">
@@ -716,22 +719,22 @@ TF infering Example:
 <pre><code>✔ success loaded self-contained database</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.0166618824005127 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.0144979953765869 sec.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.0144469738006592 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.0141808986663818 sec.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.0165109634399414 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.0157899856567383 sec.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.0152719020843506 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.0157608985900879 sec.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.0166521072387695 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.0171198844909668 sec.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>✔ Done ORA in 0.0143299102783203 sec.</code></pre>
+<pre><code>✔ Done ORA in 0.0142068862915039 sec.</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">egt_plot_results</span>(TF_Act<span class="sc">$</span>Cluster_3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -862,8 +865,8 @@ Important
 <section id="basic-result-plot" class="level3">
 <h3 class="anchored" data-anchor-id="basic-result-plot">Basic result plot</h3>
 <p>The Dot Plot provide basic viewing of results. So it supports both simple enrichment result <code>data.frame</code> and re-enriched <code>egt_object</code>.</p>
-<section id="ora" class="level4">
-<h4 class="anchored" data-anchor-id="ora">ORA</h4>
+<section id="ploting-ora-result" class="level4">
+<h4 class="anchored" data-anchor-id="ploting-ora-result">Ploting ORA result</h4>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">egt_plot_results</span>(ora_result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -881,8 +884,8 @@ Important
 </div>
 </div>
 </section>
-<section id="gsea" class="level4">
-<h4 class="anchored" data-anchor-id="gsea">GSEA</h4>
+<section id="ploting-gsea-result" class="level4">
+<h4 class="anchored" data-anchor-id="ploting-gsea-result">Ploting GSEA result</h4>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">egt_plot_results</span>(resGSEA)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -900,8 +903,8 @@ Important
 </div>
 </div>
 </section>
-<section id="re-enrichment" class="level4">
-<h4 class="anchored" data-anchor-id="re-enrichment">re-enrichment</h4>
+<section id="ploting-re-enrichment-result" class="level4">
+<h4 class="anchored" data-anchor-id="ploting-re-enrichment-result">Ploting re-enrichment result</h4>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">egt_plot_results</span>(re_enrich)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -920,7 +923,7 @@ Important
 <div class="cell">
 <div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">egt_plot_umap</span>(re_enrich)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: ggrepel: 2 unlabeled data points (too many overlaps). Consider
+<pre><code>Warning: ggrepel: 19 unlabeled data points (too many overlaps). Consider
 increasing max.overlaps</code></pre>
 </div>
 <div class="cell-output-display">
@@ -1540,7 +1543,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       &nbsp;
     <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/ZhimingYe/EnrichGT_website/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/ZhimingYe/EnrichGT_website/blob/main/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/ZhimingYe/EnrichGT_website/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
-<p>Corresponding to EnrichGT Version 0.6</p>
+<p>Corresponding to EnrichGT Version 0.7 LTS</p>
 </div>
   </div>
 </footer>

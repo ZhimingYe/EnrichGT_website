@@ -17,7 +17,7 @@ website:
     left: 
       "Copyright 2024 Zhiming Ye. Package website is built with Quarto + Rd2md. "
     right:
-      "Corresponding to EnrichGT Version 0.6"
+      "Corresponding to EnrichGT Version 0.7 LTS"
   repo-url: https://github.com/ZhimingYe/EnrichGT_website
   repo-actions: [edit, source, issue]
   back-to-top-navigation: true
