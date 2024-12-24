@@ -153,29 +153,29 @@ res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",
 database = database_from_gmt("MsigDB_Hallmark.gmt"))
 ```
 
-::: {.callout-note collapse="true"}
-#### Example of ORA
+Now, we load the necessary packages and example dataset, to provide you with an example. 
 
 ```{r}
 #| message: false
 #| warning: false
 library(dplyr)
 library(tibble)
+library(ggplot2)
 library(org.Hs.eg.db)
 library(gt)
-library(testthat)
-library(withr)
 library(EnrichGT)
 library(readr)
-```
-
-```{r}
 DEGexample <- read_csv("./DEG.csv")
 DEGexample_UpReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange>0.7)
-ora_result <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
-head(ora_result)
 ```
-:::
+
+Then we start ORA: 
+
+```{r}
+ora_result <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
+ora_result |> as_tibble() # You don't need to call as_tibble, this is just for better printing
+```
+
 
 ::: callout-tip
 #### Have many sources of genes?
@@ -202,16 +202,21 @@ This provides a quick display of NES, p-values, and leading-edge genes. This fun
 `genes_with_weights(genes,weights)` function is used to build the pre-ranked gene set for GSEA analysis.
 :::
 
-``` r
-# From DEG analysis Results
-res <- egt_gsea_analysis(genes = 
-                           genes_with_weights(genes = DEG$genes, 
-                                              weights = DEG$log2FoldChange),
+Usually, GSEA use the `log2FoldChange` from DEG analysis as the weights of genes. This is an example: 
+
+```{r} 
+resGSEA <- egt_gsea_analysis(genes = 
+                           genes_with_weights(genes = DEGexample$...1, 
+                                              weights = DEGexample$log2FoldChange),
                          database = database_GO_BP(org.Hs.eg.db)
                          )
+resGSEA |> as_tibble() # You don't need to call as_tibble, this is just for better printing
+```
 
-# From PCA
-res <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,
+Other kind of weights, like the loading from PCA or NMF, or the importance of random forest, can be also used. 
+
+``` r
+resExample <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,
                                                     weights =PCA_res$PC1_loading),
                          database = database_from_gmt("MsigDB_Hallmark.gmt")
                          )
@@ -277,7 +282,7 @@ The main purpose of developing this package is to provide a **lightweight and pr
 res <- egt_enrichment_analysis(genes = DEGtable$Genes,
 database = database_GO_BP(Org.Hs.eg.db))
 
-re_enrichment_results <- egt_recluster_analysis(
+re_enrich <- egt_recluster_analysis(
   res,
   ClusterNum = 17,
   P.adj = 0.05,
@@ -292,7 +297,11 @@ re_enrichment_results <- egt_recluster_analysis(
 re_enrich <- egt_recluster_analysis(ora_result)
 ```
 
-You can see the structure of `egt_obj`. The first slot is the result table, and the second slot contains gt table.
+You can see the structure of `re_enrich` object above. The `re_enrich` object is an S4 `EnrichGT_obj` object. The first slot is the result table (a `data.frame`), and the second slot contains gt table.
+
+```{r}
+str(re_enrich,max.level = 2)
+```
 
 ::: callout-tip
 #### How to get objects inside the S4 object?
@@ -300,11 +309,65 @@ You can see the structure of `egt_obj`. The first slot is the result table, and 
 You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@gt_object` returns a `gt` object.
 :::
 
+You can simple `View(re_enrich@enriched_result)` for the first slot.
+
 ```{r}
-str(re_enrich,max.level = 2)
+x <- re_enrich@enriched_result # Get the re-enrichment result table
+table(x$Cluster) # You can see all enriched results splited into 17 clusters
+x
 ```
 
-You can simple `View(re_enrich@enriched_result)` for the first slot, but EnrichGT offers more than data frames. Please see [HTML reports (gt table)](#html-reports-gt-table) for further visualization.
+But EnrichGT offers **more than** data frames. Please see [HTML reports (gt table)](#html-reports-gt-table) for further visualization.
+
+### Infering TFs or pathway activity and more based on meta-gene modules
+
+Based on re-enriched result, the S4 object return from re-enrichment contains `gene_modules` slot and `pathway_clusters` slot. In `gene_modules` slot you can find a group of meta-genes take part in specific pathway cluster (in `pathway_clusters` slot).
+
+EnrichGT supports inferring Pathway or Transcript Factors activity from re-enriched meta-gene modules. This is accomplished by two amazing database:
+
+-   [PROGENy](https://saezlab.github.io/progeny/) is a comprehensive resource containing a curated collection of pathways and their target genes, with weights for each interaction.
+
+-   [CollecTRI](https://github.com/saezlab/CollecTRI) is a comprehensive resource containing a curated collection of TFs and their transcriptional targets compiled from 12 different resources. This collection provides an increased coverage of transcription factors and a superior performance in identifying perturbed TFs compared to our previous.
+
+::: {.callout-note collapse="true"}
+#### TF infering Example: 
+
+```{r}
+#| fig-width: 7
+#| fig-height: 7
+re_enrich_smaller_clusterNum <- 
+  egt_recluster_analysis(
+  ora_result,
+  ClusterNum = 6, # reduce the cluster nums. 
+  P.adj = 0.05,
+  force = F,
+  nTop = 10,
+  method = "ward.D2"
+)
+TF_Act <- egt_infer_act(re_enrich_smaller_clusterNum,DB = "collectri", species = "human")
+egt_plot_results(TF_Act$Cluster_3)
+```
+
+:::
+
+::: callout-tip
+#### Wants to interpret the regulator of whole inputted genes?
+
+`PROGENy` and `CollecTRI` can be used just like other database in ORA or GSEA enrichment, for example, the `database_GO_BP()`. See [Progeny Database] and [CollecTRI Database] page for detail.
+
+Example:
+
+``` r
+TFActivity <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = database_CollecTRI_human())
+```
+:::
+
+::: callout-important
+#### Why many inferred results are empty?
+
+If when doing re-enrichment with a high number of clusters, that may cause low gene number in each meta-gene module (splitting into too many clusters make gene in each cluster is not enough to enrich), and then can't be inferred successfully. So if result is empty, please increase the number of re-clustering when doing it.
+:::
 
 ## Functions to FUSING results
 
@@ -361,7 +424,7 @@ ora_resultDown <- egt_enrichment_analysis(genes = DEGexample_DownReg$...1,databa
 Compared_Result <- egt_compare_groups(ora_resultUP,ora_resultDown)
 ```
 
-You can use `str(Result_List)` to explore what is inside the list. All object insided it is basic `EnrichGT_obj`, you can then use the functions from other sections of this tutorial for similar visualizations.
+You can use `str(Result_List)` to explore what is inside the list. All items inside it is all basic `EnrichGT_obj`s. You can then use the functions from other sections of this tutorial for similar visualizations.
 
 ```{r}
 str(Compared_Result,max.level = 2)
@@ -387,13 +450,29 @@ See re-enrichment example for further demo.
 
 ## Ploting functions
 
-::: callout-warning
-The Dot Plot supports simple enrichment result `data.frame` and re-enriched `egt_object`, but UMAP plot only supports re-enriched `egt_object`.
-:::
-
 HTML `gt` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
 
-### Dot Plot
+### Basic result plot
+
+The Dot Plot provide basic viewing of results. So it supports both simple enrichment result `data.frame` and re-enriched `egt_object`.
+
+#### ORA
+
+```{r}
+#| fig-width: 7
+#| fig-height: 8
+egt_plot_results(ora_result)
+```
+
+#### GSEA
+
+```{r}
+#| fig-width: 7
+#| fig-height: 8
+egt_plot_results(resGSEA)
+```
+
+#### re-enrichment
 
 ```{r}
 #| fig-width: 7
@@ -401,7 +480,9 @@ HTML `gt` table satisfied most of things, but for others. Though we don't want t
 egt_plot_results(re_enrich)
 ```
 
-### UMAP Plot
+### Re-enrichment dimensionality reduction plot
+
+UMAP plot only supports re-enriched `egt_object`, to show the dimensionality reduction view of enriched results. 
 
 ```{r}
 #| fig-width: 10
@@ -414,7 +495,7 @@ egt_plot_umap(re_enrich)
 ::: callout-note
 ### How to specify species?
 
-EnrichGT use `AnnotationDbi` for this. you can use `org.Hs.eg.db` for human and `org.Mm.eg.db` for mouse. For others, please refer to `BioConductor`.
+EnrichGT use `AnnotationDbi` for fetching most of databases and gene annotations. you can use `org.Hs.eg.db` for human and `org.Mm.eg.db` for mouse. For others, please search in Google or refer to `BioConductor`.
 
 But for non-AnnotationDbi source database, you do not need to provide this, like `database_CollecTRI_human()` return database about human only.
 :::
@@ -431,11 +512,29 @@ database_GO_BP(OrgDB = org.Hs.eg.db)
 
 #### GO Database
 
+`BP` stands for biological process, `CC` stands for cellular component and `MF` stands for molecular functions. The `ALL` will combined the above three sub-databases.
+
 `database_GO_BP()`, `database_GO_CC()`, `database_GO_MF()`, `database_GO_ALL()`
 
 #### Reactome Database
 
+[Reactome](https://reactome.org/) is an open source pathway database.
+
 `database_Reactome()`
+
+#### KEGG Database
+
+KEGG is a commercialized database. So EnrichGT can't pre-cache them locally. You can use `database_kegg` to fetch KEGG database pathways and modules.
+
+This function requires two species-related argument. You may familiar to the `OrgDB` argument as they will be used to convert `ENTREZ ID`s to symbols like before. Another argument is the `kegg_organism`. It determines which species data from KEGG will be fetch. For human, it would be `hsa`(in default); For mouse, it would be `mmu`. If you wants other species, execute `database_kegg_show_organism()` for details.
+
+You can switch fetching KEGG pathways or modules by argument `kegg_modules`. If TRUE, returns KEGG module; If FALSE returns KEGG pathways. In default, this is setted to FALSE to get mouse commonly used KEGG pathways.
+
+If you set `local_cache = T`, EnrichGT will cache a copy in local working folder. It will be saved as a `.enrichgt_cache` file in working dictionary. The `.enrichgt_cache` is just a `.rds` file, feel free to read it using `readRDS()`.
+
+``` r
+keggdf <- database_kegg(kegg_organism="hsa",OrgDB = org.Hs.eg.db,kegg_modules=F,local_cache=F)
+```
 
 #### WikiPathway Database
 
@@ -504,10 +603,6 @@ Example:
 ```{r}
 convert_annotations_genes(DEGexample_UpReg$...1[1:10], from_what="SYMBOL", to_what=c("ENTREZID","ENSEMBL","GENENAME"), OrgDB=org.Hs.eg.db)
 ```
-
-### Where is KEGG?
-
-KEGG limited the commercial usage. And you should use the `KEGG REST` API to download it. I have no time to achieve it now. But you can use KEGG Database from [MsigDB](https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp#C2) instead ([KEGG_MED](https://www.gsea-msigdb.org/gsea/msigdb/human/genesets.jsp?collection=CP:KEGG_MEDICUS) and [KEGG_Classical](https://www.gsea-msigdb.org/gsea/msigdb/human/genesets.jsp?collection=CP:KEGG_LEGACY)).
 
 # Acknowledgement
 
