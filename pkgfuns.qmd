@@ -4,7 +4,7 @@
 Type: Package
 Package: EnrichGT
 Title: EnrichGT - all in one enrichment analysis soluction
-Version: 0.7.0
+Version: 0.8.4
 Author: Zhiming Ye
 Maintainer: Zhiming Ye <garnetcrow@hotmail.com>
 Description: Do biological enrichment analysis and parsing and clustering
@@ -164,10 +164,13 @@ To accelerate the computation in ORA analysis, `EnrichGT` have implemented a fun
 
 ```r
 res <- egt_enrichment_analysis(genes = DEGtable$Genes,
-database = database_GO_BP())
+database = database_GO_BP(org.Hs.eg.db))
 
 res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",...),
-database = database_GO_ALL())
+database = database_GO_ALL(org.Hs.eg.db))
+
+res <- egt_enrichment_analysis(genes = genes_with_weights(geneSymbols, log2FC),
+database = database_kegg(kegg_organism="hsa",OrgDB = org.Hs.eg.db))
 
 res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",...),
 database = database_from_gmt("MsigDB_Hallmark.gmt"))
@@ -179,7 +182,7 @@ Fibroblast=c("COL1A2","COL1A3"),...),
 
 ## Arguments
 
-* `genes`: a vector of gene ids like `c("TP53","CD169","CD68","CD163"...)`.If you have genes from multiple source or experiment group, you can also pass a list with gene ids in it. For Example , `list(Macrophages=c("CD169","CD68","CD163"),Fibroblast=c("COL1A2","COL1A3))`.The genes should be match in the second param `database`'s `gene` column. For example, if database provides Ensembl IDs, you should input Ensembl IDs. But in default databases provided by `EnrichGT` is gene symbols.
+* `genes`: a vector of gene ids like `c("TP53","CD169","CD68","CD163"...)`.If you have genes from multiple source or experiment group, you can also pass a list with gene ids in it. For Example , `list(Macrophages=c("CD169","CD68","CD163"),Fibroblast=c("COL1A2","COL1A3))`.The genes should be match in the second param `database`'s `gene` column. For example, if database provides Ensembl IDs, you should input Ensembl IDs. But in default databases provided by `EnrichGT` is gene symbols.Of note, since ver 0.8, genes argument supports inputs from genes_with_weights(), EnrichGT will use the whole DEG for ORA, and final split gene candidated into high-expressing and lowly-expressing according to weights.
 * `database`: a database data frame, can contain 3 columns (ID, Pathway_Name, Genes) or just 2 columns (Pathway_Name, Genes). You can read a data frame and pass it through this or run `database_GO_CC()` to get them, see example.You can run `database_GO_CC()` to see an example.The ID column is not necessary. EnrichGT contains several databases, functions about databases are named starts with `database_...`, like `database_GO_BP()` or `database_Reactome()`.The default gene in each database EnrichGT provided to input is `GENE SYMBOL` (like TP53, not 1256 or ENSG...), not `ENTREZ ID` or `Ensembl ID`.It will be more convince for new users. Avaliable databases includes `database_GO_BP()`, `database_GO_CC()`, `database_GO_MF()` and `database_Reactome()`.You can add more database by downloading MsigDB (https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp)'s GMT files. It can be load by using `database_from_gmt(FILE_PATH)`.If you only have simple a table, you can also pass a data frame through this arguement. Of note, it should contains at least 2 coloumn (colnames(df) = c("Terms","Genes)), the first is term names and the second are the corresponding genes. If you have term ids, you can add a `ID` column at the first column, and `Terms` becomes the second column and `Genes` the third.
 * `p_adj_methods`: one of "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"
 * `p_val_cut_off`: adjusted pvalue cutoff on enrichment tests to report
@@ -270,18 +273,26 @@ This plot is the most widely like `enrichplot::dotplot()`used method to visualiz
 ## Usage
 
 ```r
-egt_plot_results(x, ntop = 30, ..., P.adj = NULL)
+egt_plot_results(
+  x,
+  ntop = NULL,
+  showIDs = F,
+  max_len_descript = 40,
+  ...,
+  P.adj = NULL
+)
 ```
 
 ## Arguments
 
 * `x`: a data frame form enriched result like `egt_enrichment_analysis()` or `egt_gsea_analysis()`, or an re-clustered `EnrichGT` object
-* `ntop`: Show top N in each cluster
+* `ntop`: Show top N in each cluster. In default, for origin enriched result, showing top 15; for re-clustered object, showing top 5 in each cluster.
+* `showIDs`: bool, show pathway IDs or not. Default is FALSE
+* `max_len_descript`: the label format length, default as 40.
 * `...`: Other param
 * `P.adj`: If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
 * `low.col`: the color for the lowest
 * `hi.col`: the color for the highest
-* `max_len_descript`: the label format length, default as 40.
 
 ## Author
 

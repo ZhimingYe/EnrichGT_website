@@ -1,0 +1,149 @@
+---
+title: "Core Enrichment Functions"
+author: "Zhiming Ye"
+format: 
+  html:
+    code-overflow: wrap
+    mermaid: 
+      theme: neutral
+toc: true
+toc-depth: 3
+toc-expand: true
+---
+
+
+> Basic enrichment analysis involves performing a batch “dictionary lookup” for a set of genes to determine their associations. The most commonly used method is **over-representation analysis (ORA)**. If you also have information on weights, then **Gene Set Enrichment Analysis (GSEA)** is another classic choice.
+
+# Enrichment of genes
+
+This is a `C++` accelerated ORA tool. The only things you need is your favourite gene symbols. If is all prepared, then load a database, run it!
+
+::: {.callout-note collapse="true"}
+#### Difference from other tools
+
+Compared to the most popular clusterProfiler, the functions of EnrichGT differ slightly. This is mainly to accommodate wet lab researchers. First, most beginners are confused by the default input of clusterProfiler, which is “ENTREZ ID.” Most people familiar with biology are used to Gene Symbols, and even Ensembl IDs are not widely known, let alone a series of seemingly random numbers. Therefore, EnrichGT uses Gene Symbol as the default input, seamlessly integrating with most downstream results from various companies, making it more suitable for non-experts in the lab.
+
+Second, clusterProfiler outputs an S4 object, which may be too complex for beginners (this is no joke); whereas EnrichGT outputs a simple table. The time of non-experts is precious, so I made these two adjustments. The only downside is that the GSEA peak plot is difficult to generate, but in reality, we focus more on NES and p-values, and in this case, bar plots are more convincing.
+
+Furthermore, The pre-processing step of the hypergeometric test in EnrichGT’s ORA function (which determines overlap) is accelerated using hash tables in C++, making it over five times faster than `clusterProfiler::enricher()`, which is a pure R implementation.
+:::
+
+::: {.callout-note collapse="true"}
+#### Basic usage
+
+``` r
+res <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = database_GO_BP(org.Hs.eg.db))
+
+res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",
+                                         "You can add more genes"),
+database = database_Reactome(org.Hs.eg.db))
+
+res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",
+                                         "You can add more genes"),
+database = database_from_gmt("MsigDB_Hallmark.gmt"))
+```
+:::
+
+Now, we load the necessary packages and example dataset, to provide you with an example.
+
+```{r}
+#| message: false
+#| warning: false
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(org.Hs.eg.db)
+library(gt)
+library(EnrichGT)
+library(readr)
+DEGexample <- read_csv("./DEG.csv")
+DEGexample_UpReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange>0.7)
+```
+
+::: callout-important
+#### Remember to load `AnnotationDbi` object
+
+Most of errors are caused by this. Please load Like `AnnotationDbi` like `org.Hs.eg.db` before doing enrichment.
+:::
+
+Then we start ORA:
+
+```{r}
+ora_result <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
+ora_result |> as_tibble() # You don't need to call as_tibble, this is just for better printing
+```
+
+::: callout-tip
+#### Have many sources of genes?
+
+-   Case 1: many groups of genes:
+
+This function also support many groups of genes, you can input a `list`.
+
+``` r
+# For many groups of genes
+res <- egt_enrichment_analysis(list(Macrophages=c("CD169","CD68","CD163"),
+Fibroblast=c("COL1A2","COL1A3"),"You can add more groups"),
+ database = database_from_gmt("panglaoDB.gmt"))
+```
+
+-   Case 2: Differential expressed genes with different direction:
+
+In above example, if we don't filter out the up-regulated genes for ORA, but want to combine all DEGs without selecting them according to `log2FC`. How can we achieve that?
+
+From version 0.8, `egt_enrichment_analysis()` supports input genes using `genes_with_weights()` function. For example:
+
+``` r
+DEGexample <- read_csv("~/Documents/4Fun/EGTFun/DEG.csv")
+DEGexample2 <- DEGexample |> dplyr::filter(pvalue<0.05)
+ora_result <- egt_enrichment_analysis(genes = genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), database = database_GO_BP(org.Hs.eg.db))
+```
+
+Then, the output will automatically consider the proportion of up-regulated genes and down-regulated genes, and finally showing them in any results EnrichGT generated, like `data.frame`s, `gt` table or dot plots.
+:::
+
+For visualize, see [Ploting ORA result] for details.
+
+# Enrichment of weighted genes (GSEA)
+
+Genes with specific weights (e.g. the log2FC) can use GSEA method. It should input a pre-ranked geneset. This use `C++` accelerated `fgsea::fgsea()` as backend, so it is also very fast.
+
+This provides a quick display of NES, p-values, and leading-edge genes. This function uses the same backend as the industry-standard `clusterProfiler` (it is also implemented using the [fgsea](https://github.com/ctlab/fgsea) package). However, `EnrichGT` does not delve as deeply as `clusterProfiler` and lacks advanced visualization capabilities. While it may not be sufficient for bioinformatics experts, the current implementation is adequate for wet-lab researchers. If comprehensive analysis is required, consider using `clusterProfiler.` However, if you only need an overview and reclustering, `EnrichGT` may be enough.
+
+::: callout-note
+#### How to build pre-ranked gene set?
+
+`genes_with_weights(genes,weights)` function is used to build the pre-ranked gene set for GSEA analysis.
+:::
+
+Usually, GSEA use the `log2FoldChange` from DEG analysis as the weights of genes. This is an example:
+
+```{r}
+resGSEA <- egt_gsea_analysis(genes = 
+                           genes_with_weights(genes = DEGexample$...1, 
+                                              weights = DEGexample$log2FoldChange),
+                         database = database_GO_BP(org.Hs.eg.db)
+                         )
+resGSEA |> as_tibble() # You don't need to call as_tibble, this is just for better printing
+```
+
+Other kind of weights, like the loading from PCA or NMF, or the importance of random forest, can be also used.
+
+``` r
+resExample <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,
+                                                    weights =PCA_res$PC1_loading),
+                         database = database_from_gmt("MsigDB_Hallmark.gmt")
+                         )
+```
+
+For visualize, see [ploting page](visualize.qmd) for details.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+saveRDS(DEGexample,file="DEGexample.rds")
+saveRDS(ora_result,file="ora_result.rds")
+saveRDS(resGSEA,file="resGSEA.rds")
+```

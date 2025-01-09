@@ -1,0 +1,100 @@
+---
+title: "Visualize results through HTML reports or figures"
+author: "Zhiming Ye"
+format: 
+  html:
+    code-overflow: wrap
+    mermaid: 
+      theme: neutral
+toc: true
+toc-depth: 3
+toc-expand: true
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(org.Hs.eg.db)
+library(gt)
+library(EnrichGT)
+library(readr)
+DEGexample<-readRDS("DEGexample.rds")
+ora_result<-readRDS("ora_result.rds")
+resGSEA<-readRDS("resGSEA.rds")
+re_enrich<-readRDS("re_enrich.rds")
+```
+
+# HTML reports (gt table) {#html-reports-gt-table}
+
+Because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `gt` HTML tables. This only supports the re-enriched results.
+
+You can simple input the object name of re-enriched object or fused object, to show the table.
+
+![](enrichGTTable.jpg)
+
+This just shows the second slot inside the `EnrichGT_obj` object. The second slot - `gt_object` is a pure object of `gt` package, you can use any [function](https://gt.rstudio.com/reference/index.html) on it, like:
+
+``` r
+re_enrichment_results@gt_object |> gt_save("test.html") # Save it use basic gt functions. 
+```
+
+For further usage of gt package, please refer to <https://gt.rstudio.com/articles/gt.html>.
+
+See re-enrichment example for further demo.
+
+# Ploting functions
+
+HTML `gt` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
+
+# Basic result plot
+
+The Dot Plot provide basic viewing of results. So it supports both simple enrichment result `data.frame` and re-enriched `egt_object`.
+
+You can adjust this figure by these params: 
+
+* `ntop`: Show top N in each cluster. In default, for origin enriched result, showing top 15; for re-clustered object, showing top 5 in each cluster.
+* `showIDs`: bool, show pathway IDs or not. Default is FALSE
+* `max_len_descript`: the label format length, default as 40.
+* `P.adj`: If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
+* `low.col`: the color for the lowest
+* `hi.col`: the color for the highest
+
+### Ploting ORA result
+
+```{r}
+#| fig-width: 7
+#| fig-height: 8
+egt_plot_results(ora_result)
+```
+
+### Ploting GSEA result
+
+```{r}
+#| fig-width: 7
+#| fig-height: 8
+egt_plot_results(resGSEA)
+```
+
+### Ploting re-enrichment result
+
+```{r}
+#| fig-width: 7
+#| fig-height: 11
+egt_plot_results(re_enrich)
+```
+
+# Re-enrichment dimensionality reduction plot
+
+UMAP plot only supports re-enriched `egt_object`, to show the dimensionality reduction view of enriched results.
+
+A word frequency matrix represents the frequency of words or tokens across different documents or text samples. Each row corresponds to a document, and each column represents a word or token, with the cell values indicating the frequency of the respective word in that document.However, high-dimensional data like word frequency matrices can be challenging to interpret directly. To make such data easier to analyze, we can reduce its dimensionality and visualize the patterns or clusters in a 2D or 3D space. UMAP (Uniform Manifold Approximation and Projection) is a powerful, non-linear dimensionality reduction technique widely used for this purpose.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 10
+egt_plot_umap(re_enrich)
+```

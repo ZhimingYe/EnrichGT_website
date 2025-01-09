@@ -1,0 +1,22 @@
+---
+title: "Acknowledgement"
+author: "Zhiming Ye"
+format: 
+  html:
+    code-overflow: wrap
+    mermaid: 
+      theme: neutral
+toc: true
+toc-depth: 3
+toc-expand: true
+---
+
+This package is inspired by famous `clusterProfiler`. But since 0.5 version, the major enrichment functions of `EnrichGT` have replaced by the self-implemented functions, which provides a much light-weight experience. But without `clusterProfiler`, I won't try to write this package.
+
+::: callout-note
+# If also using `clusterProfiler` ?
+
+Please cite:
+
+T Wu<sup>\#</sup>, E Hu<sup>\#</sup>, S Xu, M Chen, P Guo, Z Dai, T Feng, L Zhou, W Tang, L Zhan, X Fu, S Liu, X Bo<sup>\*</sup>, **G Yu**<sup>\*</sup>. clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. ***The Innovation***. 2021, 2(3):100141. doi: [10.1016/j.xinn.2021.100141](https://doi.org/10.1016/j.xinn.2021.100141)
+:::

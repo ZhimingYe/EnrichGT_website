@@ -13,11 +13,26 @@ website:
         text: Github
       - href: preface.qmd
         text: Motivation
+      - href: acknowledgement.qmd
+        text: Acknowledgement
+
+  sidebar:
+    - title: "Home"
+      style: "docked"
+      background: light
+      contents:
+        - index.qmd
+        - basic.qmd
+        - enrichment_core.qmd
+        - re_enrichment.qmd
+        - fusing.qmd
+        - visualize.qmd
+        - database.qmd
   page-footer:
     left: 
-      "Copyright 2024 Zhiming Ye. Package website is built with Quarto + Rd2md. "
+      "Copyright 2025 Zhiming Ye. Package website is built with Quarto + Rd2md. "
     right:
-      "Corresponding to EnrichGT Version 0.7 LTS"
+      "Corresponding to EnrichGT Version 0.8"
   repo-url: https://github.com/ZhimingYe/EnrichGT_website
   repo-actions: [edit, source, issue]
   back-to-top-navigation: true

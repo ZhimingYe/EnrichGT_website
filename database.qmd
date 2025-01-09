@@ -1,0 +1,135 @@
+---
+title: "Select your databases for enrichment or annotation"
+author: "Zhiming Ye"
+format: 
+  html:
+    code-overflow: wrap
+    mermaid: 
+      theme: neutral
+toc: true
+toc-depth: 3
+toc-expand: true
+---
+
+
+# DataBases Helpers
+
+::: callout-note
+### How to specify species?
+
+EnrichGT use `AnnotationDbi` for fetching most of databases and gene annotations. you can use `org.Hs.eg.db` for human and `org.Mm.eg.db` for mouse. For others, please search in Google or refer to `BioConductor`.
+
+But for non-AnnotationDbi source database, you do not need to provide this, like `database_CollecTRI_human()` return database about human only.
+:::
+
+## Built in database or AnnotationDbi database
+
+You should add argument `OrgDB` for fetching them.
+
+Example:
+
+``` r
+database_GO_BP(OrgDB = org.Hs.eg.db)
+```
+
+### GO Database
+
+`BP` stands for biological process, `CC` stands for cellular component and `MF` stands for molecular functions. The `ALL` will combined the above three sub-databases.
+
+`database_GO_BP()`, `database_GO_CC()`, `database_GO_MF()`, `database_GO_ALL()`
+
+### Reactome Database
+
+[Reactome](https://reactome.org/) is an open source pathway database.
+
+`database_Reactome()`
+
+### KEGG Database
+
+KEGG is a commercialized database. So EnrichGT can't pre-cache them locally. You can use `database_kegg` to fetch KEGG database pathways and modules.
+
+This function requires two species-related argument. You may familiar to the `OrgDB` argument as they will be used to convert `ENTREZ ID`s to symbols like before. Another argument is the `kegg_organism`. It determines which species data from KEGG will be fetch. For human, it would be `hsa`(in default); For mouse, it would be `mmu`. If you wants other species, execute `database_kegg_show_organism()` for details.
+
+You can switch fetching KEGG pathways or modules by argument `kegg_modules`. If TRUE, returns KEGG module; If FALSE returns KEGG pathways. In default, this is setted to FALSE to get mouse commonly used KEGG pathways.
+
+If you set `local_cache = T`, EnrichGT will cache a copy in local working folder. It will be saved as a `.enrichgt_cache` file in working dictionary. The `.enrichgt_cache` is just a `.rds` file, feel free to read it using `readRDS()`.
+
+``` r
+keggdf <- database_kegg(kegg_organism="hsa",OrgDB = org.Hs.eg.db,kegg_modules=F,local_cache=F)
+```
+
+### WikiPathway Database
+
+WikiPathway database provides pre-built GMT files (<https://data.wikipathways.org/current/gmt/>). In default they are recorded as `ENTREZ IDs`, so you need to provide proper species database (e.g. org.Hs.eg.db for human), to `database_from_gmt` function and EnrichGT will automatically convert `ENTREZ IDs` to gene symbols for enrichment analysis.
+
+``` r
+download.file("https://data.wikipathways.org/current/gmt/wikipathways-20241210-gmt-Homo_sapiens.gmt",destfile = "WikiPWS_human.gmt")
+WikiPWsDB <- database_from_gmt("WikiPWS_human.gmt",OrgDB=org.Hs.eg.db)
+res <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = WikiPWsDB)
+```
+
+### Progeny Database
+
+For pathway activity infer, `database_progeny_human()` and `database_progeny_mouse()`
+
+### CollecTRI Database
+
+For Transcript Factors infer, `database_CollecTRI_human()` and `database_CollecTRI_mouse()`
+
+## Read Addition Gene Sets from local GMT files
+
+EnrichGT supports reading `GMT` files, You can obtain `GMT` files from [MsigDB](https://www.gsea-msigdb.org/gsea/msigdb/index.jsp).
+
+``` r
+database_from_gmt("Path_to_your_Gmt_file.gmt")
+```
+
+In default, `database_from_gmt` will try to convert the numeric ids to gene symbols (as they are usually the `ENTREZ IDs`, you can disable this by passing `convert_2_symbols = F` ).
+
+## Read Addition Gene Sets from local data tables
+
+The result of any `database_***` functions are `data.frame`s. So you can simple read any data tables and use them for any enrichment function.
+
+The typical input should be:
+
+| IDs | Term                | Genes |
+|-----|---------------------|-------|
+| ID1 | Biological Pathway1 | Gene1 |
+| ID1 | Biological Pathway1 | Gene2 |
+| ID1 | Biological Pathway1 | Gene3 |
+| ID2 | Biological Pathway2 | Gene3 |
+| ... | ...                 | ...   |
+
+or
+
+| Term                | Genes |
+|---------------------|-------|
+| Biological Pathway1 | Gene1 |
+| Biological Pathway1 | Gene4 |
+| Biological Pathway2 | Gene7 |
+| ...                 | ...   |
+
+Example:
+
+``` r
+library(readr)
+db <- read_csv("you_gene_set.csv")
+res <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = db)
+```
+
+# Gene Annotation Converter
+
+You can use `convert_annotations_genes()` to convert gene annotations from any keys to any keys.
+
+Example:
+
+```{r}
+suppressMessages(library(EnrichGT))
+suppressMessages(library(readr))
+suppressMessages(library(org.Hs.eg.db))
+suppressMessages(DEGexample <- read_csv("./DEG.csv"))
+convert_annotations_genes(DEGexample$...1[1:10], from_what="SYMBOL", to_what=c("ENTREZID","ENSEMBL","GENENAME"), OrgDB=org.Hs.eg.db)
+```
+

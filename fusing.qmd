@@ -1,0 +1,87 @@
+---
+title: "Functions to FUSING results"
+author: "Zhiming Ye"
+format: 
+  html:
+    code-overflow: wrap
+    mermaid: 
+      theme: neutral
+toc: true
+toc-depth: 3
+toc-expand: true
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(org.Hs.eg.db)
+library(gt)
+library(EnrichGT)
+library(readr)
+DEGexample<-readRDS("DEGexample.rds")
+ora_result<-readRDS("ora_result.rds")
+
+```
+
+# Enrichment analysis using multiple databases
+
+Some enrichment analysis tools like [Metascape](https://metascape.org/gp/index.html) can provide multi-database analysis in one-click (e.g. combining GO, KEGG, Reactome... ). EnrichGT also provides a similar function to achieve this (**fuse** them). You can provide a list containing multiple enrichment results form `EnrichGT` or `clusterProfiler` into `egt_recluster_analysis`.
+
+::: callout-important
+Of note, all enriched objects in the same list should from **the same** gene source. Like the below example, both the `res1` and `res2` are enriched results from `DEGtable$Genes`.
+:::
+
+Example:
+
+``` r
+res1 <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = database_GO_BP(org.Hs.eg.db))
+
+res2 <- egt_enrichment_analysis(genes = DEGtable$Genes,
+database = database_Reactome(org.Hs.eg.db))
+
+Fused_enrich <- egt_recluster_analysis(list(res1,res2))
+```
+
+After this, you can generate HTML tables to view the fused result (See the [HTML reports (gt table)](visualize.qmd)).
+
+# Reversed gene sources analyzed by same database
+
+This is a less meticulously crafted feature that performs re-clustering analysis by categorizing and considering various cases, such as intersections, unions, and unrelated sets. The result is a list containing four `EnrichGT_obj` objects with overlapped enriched terms, unique enrich terms.
+
+``` r
+# See ?egt_compare_groups for further helps
+Result_List <- egt_compare_groups(
+  obj.test,
+  obj.ctrl,
+  name.test = NULL,
+  name.ctrl = NULL,
+  ClusterNum = 15,
+  P.adj = 0.05,
+  force = F,
+  nTop = 10,
+  method = "ward.D2",
+)
+```
+
+Example:
+
+```{r}
+#| message: false
+#| warning: false
+DEGexample_UpReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange>0.7)
+DEGexample_DownReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange<(-0.7))
+ora_resultUP <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
+ora_resultDown <- egt_enrichment_analysis(genes = DEGexample_DownReg$...1,database = database_GO_BP(org.Hs.eg.db))
+Compared_Result <- egt_compare_groups(ora_resultUP,ora_resultDown)
+```
+
+You can use `str(Result_List)` to explore what is inside the list. All items inside it is all basic `EnrichGT_obj`s. You can then use the functions from other sections of this tutorial for similar visualizations.
+
+```{r}
+str(Compared_Result,max.level = 2)
+```
