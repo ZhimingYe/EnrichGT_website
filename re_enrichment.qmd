@@ -1,6 +1,5 @@
 ---
 title: "Re-enrich Enriched Results"
-author: "Zhiming Ye"
 format: 
   html:
     code-overflow: wrap

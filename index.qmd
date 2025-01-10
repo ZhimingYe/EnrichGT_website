@@ -19,10 +19,10 @@ library(Rd2md)
 render_refman("../EnrichGT/","./pkgfuns.qmd")
 ```
 
-# Overview
+# Intro
 
 ::: callout-tip
-### What is EnrichGT?
+### Highlights
 
 | EnrichGT means [enrich]{.underline}ing previously enriched results ($E^2_{\text{enrich}}$) into [g]{.underline}reat [t]{.underline}ables and more ... |
 |------------------------------------------------------------------------|
@@ -32,6 +32,37 @@ render_refman("../EnrichGT/","./pkgfuns.qmd")
 | User-friendly **HTML output** that is easy to read and interpret |
 | Do a series of things just in **ONE** package |
 :::
+
+This package was developed under the inspiration of *clusterProfiler* (a wonderful and powerful package!), but none of `EnrichGT`'s internal functions rely on any *clusterProfiler* functions. Some database-loading code references *clusterProfiler*‘s implementation, but it has been extensively modified to provide lightweight experience. In other words, this is not a case of rebranding *clusterProfiler* under a different name. It’s a lightweight implementation designed to wet-labs. If you need a tool that handles every detail, please use *clusterProfiler* instead. Please see [acknowledgment](acknowledgement.qmd) page for citing *clusterProfiler*.
+
+# Install EnrichGT
+
+``` r
+install.packages("pak")
+pak::pkg_install("ZhimingYe/EnrichGT")
+```
+
+
+The `AnnotationDbi`, `fgsea`, `reactome.db` and `GO.db` were from BioConductor and might be slow to install. If you can't install, please re-check your web connections or update your R and BioConductor, or use [Posit Package Manager](https://packagemanager.posit.co/) to install when using old R.
+
+# Meet EnrichGT
+
+Please see articles on the left! Especially the [basic workflow](basic.qmd) introduction.
+
+::: callout-tip
+See [package function page](pkgfuns.html) for further detail params of functions. (For example, how to use a function)
+
+You can use `? function` to get further help when installed.
+
+``` r
+?egt_recluster_analysis
+```
+:::
+
+In most examples of this document, we use a result table of DEG analysis `DEG.csv`. The gene symbols of `DEG.csv` is on the first column without column name. In default `read_csv()` convert the unamed column name to `...1`. So `DEGtable$...1` refers to gene symbols.
+
+
+# Overview
 
 ```{mermaid}
 
@@ -92,36 +123,3 @@ graph LR
 ```
 
 ^The functions from EnrichGT are starting with “egt\_” or “database\_”.^
-
-This package was developed under the inspiration of *clusterProfiler* (a wonderful and powerful package!), but none of its internal functions rely on any *clusterProfiler* functions. Some database-loading code references *clusterProfiler*‘s implementation, but it has been extensively modified to provide lightweight experience. In other words, this is not a case of rebranding *clusterProfiler* under a different name. It’s a lightweight implementation designed to wet-labs. If you need a tool that handles every detail, please use *clusterProfiler* instead. Please see [acknowledgment](acknowledgment.qmd) page for citing *clusterProfiler**.***
-
-# Install EnrichGT
-
-``` r
-install.packages("pak")
-pak::pkg_install("ZhimingYe/EnrichGT")
-```
-
-or
-
-``` r
-install.packages("devtools")
-library(devtools)
-install_github("ZhimingYe/EnrichGT")
-```
-
-The `AnnotationDbi`, `fgsea`, `reactome.db` and `GO.db` were from BioConductor and might be slow to install. If you can't install, please re-check your web connections or update your R and BioConductor, or use [Posit Package Manager](https://packagemanager.posit.co/) to install when using old R.
-
-# Meet EnrichGT
-
-::: callout-important
-See [package function page](pkgfuns.html) for further information (For example, how to use a function)
-
-You can use `? function` to get further help when installed.
-
-``` r
-?egt_recluster_analysis
-```
-:::
-
-In most examples of this document, we use a result table of DEG analysis `DEG.csv`. The gene symbols of `DEG.csv` is on the first column without column name. In default `read_csv()` convert the unamed column name to `...1`. So `DEGtable$...1` refers to gene symbols.

@@ -1,6 +1,5 @@
 ---
 title: "Visualize results through HTML reports or figures"
-author: "Zhiming Ye"
 format: 
   html:
     code-overflow: wrap

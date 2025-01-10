@@ -1,6 +1,5 @@
 ---
 title: "Select your databases for enrichment or annotation"
-author: "Zhiming Ye"
 format: 
   html:
     code-overflow: wrap

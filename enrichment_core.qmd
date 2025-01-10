@@ -1,6 +1,5 @@
 ---
 title: "Core Enrichment Functions"
-author: "Zhiming Ye"
 format: 
   html:
     code-overflow: wrap

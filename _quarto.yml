@@ -19,7 +19,6 @@ website:
   sidebar:
     - title: "Home"
       style: "docked"
-      background: light
       contents:
         - index.qmd
         - basic.qmd
@@ -30,11 +29,11 @@ website:
         - database.qmd
   page-footer:
     left: 
-      "Copyright 2025 Zhiming Ye. Package website is built with Quarto + Rd2md. "
+      "Developed by Zhiming Ye"
     right:
       "Corresponding to EnrichGT Version 0.8"
   repo-url: https://github.com/ZhimingYe/EnrichGT_website
-  repo-actions: [edit, source, issue]
+  repo-actions: [source, issue]
   back-to-top-navigation: true
 
 format:

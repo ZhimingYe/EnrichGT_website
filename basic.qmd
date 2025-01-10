@@ -1,6 +1,5 @@
 ---
 title: "Basic Workflow"
-author: "Zhiming Ye"
 format: 
   html:
     code-overflow: wrap
@@ -13,11 +12,15 @@ toc-expand: true
 
 This is a minimal example. For details, please see following articles on the left of website. 
 
+> Basic enrichment analysis involves performing a batch “dictionary lookup” for a set of genes to determine their associations. The most commonly used method is **over-representation analysis (ORA)**. If you also have information on weights, then **Gene Set Enrichment Analysis (GSEA)** is another classic choice. After getting enriched result, a **re-enrich analysis** may help you to get more insightful result. 
+
 # ORA
+
+
 ``` r
 library(dplyr)
 library(tibble)
-library(org.Hs.eg.db)
+library(org.Hs.eg.db) # <1>
 library(gt)
 library(EnrichGT)
 library(readr)
@@ -26,50 +29,101 @@ DEGexample <- read_csv("~/Documents/4Fun/EGTFun/DEG.csv")
 DEGexample2 <- DEGexample |> dplyr::filter(pvalue<0.05)
 DEGexample_UpReg <- DEGexample |> dplyr::filter(pvalue<0.05,log2FoldChange>0.7)
 DEGs <- DEGexample_UpReg$...1
-ora_result <- egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db)) # ORA with Reactome
-# or with direction / wants to change database to Gene Ontology BP: 
-another_example <- egt_enrichment_analysis(genes = genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), database = database_GO_BP(org.Hs.eg.db))
-egt_plot_results(ora_result,showIDs = T,ntop = 20) # showing enrichment result
+# The first example: 
+ora_result <- egt_enrichment_analysis(
+                genes = DEGs, #<2> 
+                database = database_Reactome(OrgDB = org.Hs.eg.db) # <3>
+                )
+# The second example: 
+another_example <- egt_enrichment_analysis(
+                genes = genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), # <4>
+                database = database_GO_BP(org.Hs.eg.db)) # <5>
+# Ploting
+egt_plot_results(ora_result,showIDs = T,ntop = 20) # <6>
 ```
+1. EnrichGT use `AnnotationDbi` for fetching most of databases and gene annotations. If throwing an error, please re-check this step; 
+2. ORA just need 2 input. The first is a character vector containg gene symbols like `c("TP53","PLP1","FABP1","VCAM1")`; 
+3. The second is your favourite database. EnrichGT supports many. See [Database usage](database.qmd); 
+4. Or you want input genes with direction. See [enrichment details](enrichment_core.qmd); 
+5. Enriching using Gene Ontology BP; 
+6. Showing enrichment result as figure. See more in [visualization help](visualize.qmd). 
 
 # Re-enrichment
 
+This support the ORA output from both `EnrichGT` and `clusterProfiler`. So you can use your favourite tool to achieve this. 
+
 ```r
-re_enrichment_results <- egt_recluster_analysis(ora_result) # doing re-enrichment
-re_enrichment_results # showing GT HTML report
-egt_plot_results(re_enrichment_results,ntop = 3)# viewing re-enrichment result as dot plot
-egt_plot_umap(re_enrichment_results)# viewing re-enrichment result as UMAP plot
-re_enrichment_results |> egt_infer_act() # Infering TF/pathway activity, experimential, might not be correct. 
+re_enrichment_results <- egt_recluster_analysis(ora_result) # <1>
+re_enrichment_results # <2>
+egt_plot_results(re_enrichment_results,ntop = 3)# <3>
+egt_plot_umap(re_enrichment_results)# <4>
+re_enrichment_results |> egt_infer_act(DB = "collectri", species = "human") # <5>
 ```
+1. Doing re-enrichment analysis (See [Re-enrichment usage](re_enrichment.qmd)); 
+2. Showing GT HTML report, see more in [visualization help](visualize.qmd); 
+3. Viewing re-enrichment result as dot plot, see more in [visualization help](visualize.qmd); 
+4. Viewing re-enrichment result as UMAP plot, see more in [visualization help](visualize.qmd); 
+5. Infering TF/pathway activity, experimential, might not be correct, see more in [re-enrichment help](re_enrichment.qmd). 
 
 # GSEA
 
+If you have a set of genes with known weight like `log2FC`, or the loading from `PCA` or `NMF`...
+
 ``` r
-# GSEA is also supported:
-# Additional pathway information like GMT file or table is also supported: 
-GSEAexample <- egt_gsea_analysis(genes = genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), database = database_from_gmt("gmt_file.gmt"))
+GSEAexample <- egt_gsea_analysis(
+            genes = 
+              genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), # <1>
+            database = 
+              database_from_gmt("gmt_file.gmt") # <2>
+            )
 egt_plot_results(GSEAexample) # showing GSEA result
 ```
+1. GSEA is also supported, see [enrichment details](enrichment_core.qmd). `genes_with_weights()` is used to generate weighted genes; 
+2. Additional pathway information like GMT file or table is also supported. See [Database usage](database.qmd). 
 
 # Fusing ORA results
+
+This function support the ORA output from both `EnrichGT` and `clusterProfiler`. So you can use your favourite tool to achieve this. 
+
+```r
+# Fusing results: 
+ora_result_A <- egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db)) # <1>
+ora_result_B <- egt_enrichment_analysis(genes = DEGs, database = database_kegg(kegg_organism = "hsa",OrgDB = org.Hs.eg.db)) # <2>
+fused_result <- egt_recluster_analysis(list(ora_result_A,ora_result_B)) # <3>
+```
+1. ORA result 1 with Reactome; 
+2. ORA result 2 with KEGG; 
+3. Fuse together. 
 
 ::: callout-important
 Only same source of enrichment results can be merge. 
 
-For example, the result of `egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db))` and `egt_enrichment_analysis(genes = DEGs, database = database_kegg(OrgDB = org.Hs.eg.db))` can be merged, 
-
-but the result of `egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db))` and `egt_enrichment_analysis(genes = genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), database = database_kegg(OrgDB = org.Hs.eg.db))` **CAN'T**.
-:::
-
-```r
-# Fusing results: 
-ora_result_A <- egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db)) # ORA with Reactome
-ora_result_B <- egt_enrichment_analysis(genes = DEGs, database = database_kegg(kegg_organism = "hsa",OrgDB = org.Hs.eg.db)) # ORA with KEGG
-fused_result <- egt_recluster_analysis(list(ora_result_A,ora_result_B))
+For example, the result of 
+``` r
+egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db))
+``` 
+and 
+``` r
+egt_enrichment_analysis(genes = DEGs, database = database_kegg(OrgDB = org.Hs.eg.db))
 ```
+can be merged, 
+
+but the result of 
+``` r
+egt_enrichment_analysis(genes = DEGs, database = database_Reactome(OrgDB = org.Hs.eg.db))
+```
+and 
+``` r
+egt_enrichment_analysis(genes = genes_with_weights(DEGexample2$...1,DEGexample2$log2FoldChange), database = database_kegg(OrgDB = org.Hs.eg.db))
+```
+**CAN'T** be merged.
+
+If you have ORA results that want to compare, please use `egt_compare_groups()`. 
+:::
 
 # Gene Annotation Converter
 
 ``` r
-IDs_of_genes <- convert_annotations_genes(DEGexample$...1[1:10], from_what="SYMBOL", to_what=c("ENTREZID","ENSEMBL","GENENAME"), OrgDB=org.Hs.eg.db)
+IDs_of_genes <- convert_annotations_genes(DEGexample$...1[1:10], from_what="SYMBOL", to_what=c("ENTREZID","ENSEMBL","GENENAME"), OrgDB=org.Hs.eg.db) # <1>
 ```
+1. Just told it from what and to what :)

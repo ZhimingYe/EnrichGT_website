@@ -1,6 +1,5 @@
 ---
 title: "Functions to FUSING results"
-author: "Zhiming Ye"
 format: 
   html:
     code-overflow: wrap
