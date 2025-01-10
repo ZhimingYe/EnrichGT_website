@@ -1,5 +1,5 @@
 ---
-title: "Introduction and Installation"
+title: "EnrichGT: all-in-one enrichment analysis"
 author: "Zhiming Ye"
 format: 
   html:
@@ -33,9 +33,12 @@ render_refman("../EnrichGT/","./pkgfuns.qmd")
 | Do a series of things just in **ONE** package |
 :::
 
+::: {.callout-note collapse="true"}
+### Aim and Scope
 Please note that the primary goal of `EnrichGT` is to provide researchers in wet labs, who have been busy all day, with quick and insightful biological interpretations from dry lab data to support their experiments. Therefore, all computational methods employed are relatively straightforward and pragmatic. For example, `C++` based ORA enrichment function, GSEA only using `fgsea` output without more analysis, use only vocabulary frequency matrix for re-enrichment instead of term's similarity, and more... Its purpose is to offer a “quick overview”. After this initial overview, you can use more widely recognized tools to generate statistically rigorous results (not necessary though). However, don’t misunderstand—this does not mean that the statistical processes in `EnrichGT` are incorrect. I’ve made every effort to ensure their accuracy; they are just less refined. Additionally, the tool has been tested in most typical scenarios, but extreme cases cannot be entirely ruled out.
 
 This package was developed under the inspiration of *clusterProfiler* (a wonderful and powerful package! I have learned a lot. Without it I won't develop `EnrichGT`.), but none of `EnrichGT`'s internal functions rely on any *clusterProfiler* functions. Some database-loading code references *clusterProfiler*‘s implementation, but it has been extensively modified to provide lightweight experience. In other words, this is not a case of rebranding *clusterProfiler* under a different name. It’s a lightweight implementation designed to wet-labs. If you need a tool that handles every detail, please use *clusterProfiler* instead. Please see [acknowledgment](acknowledgement.qmd) page for citing *clusterProfiler*.
+:::
 
 # Install EnrichGT
 
