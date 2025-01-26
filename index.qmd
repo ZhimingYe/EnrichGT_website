@@ -85,7 +85,7 @@ graph LR
 
     subgraph Visualize results
         P1[egt_plot_results]
-        P2[egt_plot_umap]
+        P2[egt_plot_gsea]
     end
 
     subgraph egt_recluster_analysis
@@ -117,7 +117,7 @@ graph LR
     MG --> K1
 
     CC --> P1
-    CC --> P2
+    C --> P2
 
     MG --> I
 

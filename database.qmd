@@ -45,16 +45,16 @@ database_GO_BP(OrgDB = org.Hs.eg.db)
 
 ### KEGG Database
 
-KEGG is a commercialized database. So EnrichGT can't pre-cache them locally. You can use `database_kegg` to fetch KEGG database pathways and modules.
+KEGG is a commercialized database. So EnrichGT can't pre-cache them locally. You can use `database_KEGG` to fetch KEGG database pathways and modules.
 
-This function requires two species-related argument. You may familiar to the `OrgDB` argument as they will be used to convert `ENTREZ ID`s to symbols like before. Another argument is the `kegg_organism`. It determines which species data from KEGG will be fetch. For human, it would be `hsa`(in default); For mouse, it would be `mmu`. If you wants other species, execute `database_kegg_show_organism()` for details.
+This function requires two species-related argument. You may familiar to the `OrgDB` argument as they will be used to convert `ENTREZ ID`s to symbols like before. Another argument is the `kegg_organism`. It determines which species data from KEGG will be fetch. For human, it would be `hsa`(in default); For mouse, it would be `mmu`. If you wants other species, execute `database_KEGG_show_organism()` for details.
 
 You can switch fetching KEGG pathways or modules by argument `kegg_modules`. If TRUE, returns KEGG module; If FALSE returns KEGG pathways. In default, this is setted to FALSE to get mouse commonly used KEGG pathways.
 
 If you set `local_cache = T`, EnrichGT will cache a copy in local working folder. It will be saved as a `.enrichgt_cache` file in working dictionary. The `.enrichgt_cache` is just a `.rds` file, feel free to read it using `readRDS()`.
 
 ``` r
-keggdf <- database_kegg(kegg_organism="hsa",OrgDB = org.Hs.eg.db,kegg_modules=F,local_cache=F)
+keggdf <- database_KEGG(kegg_organism="hsa",OrgDB = org.Hs.eg.db,kegg_modules=F,local_cache=F)
 ```
 
 ### WikiPathway Database

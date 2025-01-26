@@ -4,7 +4,7 @@
 Type: Package
 Package: EnrichGT
 Title: EnrichGT - all in one enrichment analysis soluction
-Version: 0.8.4
+Version: 0.8.6
 Author: Zhiming Ye
 Maintainer: Zhiming Ye <garnetcrow@hotmail.com>
 Description: Do biological enrichment analysis and parsing and clustering
@@ -22,7 +22,6 @@ Imports:
     fontawesome,
     forcats,
     ggplot2,
-    ggrepel,
     glue,
     GO.db,
     grDevices,
@@ -41,9 +40,11 @@ Imports:
     stringr,
     text2vec,
     tibble,
-    umap,
     utils,
     xfun
+Suggests: 
+    readr,
+    testthat (>= 3.0.0),
 LinkingTo: 
     Rcpp
 Config/testthat/edition: 3
@@ -264,6 +265,43 @@ Zhiming Ye, Saez-Rodriguez Lab (The decoupleR package, https://saezlab.github.io
 
 a `compareCluster` result from `clusterProfiler`
 
+# `egt_plot_gsea`: Generate GSEA Enrichment Plots
+
+## Description
+
+This function creates graphical representations of Gene Set Enrichment Analysis (GSEA) results, 
+including either a multi-panel GSEA table plot for multiple pathways or a single pathway 
+enrichment plot. The visualization leverages the `fgsea` package's plotting functions.
+
+## Usage
+
+```r
+egt_plot_gsea(x, genes, database)
+```
+
+## Arguments
+
+* `x`: A GSEA result object. Can be either:
+* A data frame containing GSEA results (requires columns: pvalue, p.adjust, Description)
+* A character string specifying a single pathway name
+* `genes`: A character vector of ranked gene names. These should match the gene identifiers
+used in the GSEA analysis.
+* `database`: A character string specifying the gene set database name. This should correspond
+to the database used in the original GSEA analysis.
+
+## Author
+
+Zhiming Ye, warpped from `fgsea`
+
+## Value
+
+A ggplot object:
+
+* When `x` is a data frame: Returns a multi-panel plot showing normalized enrichment
+        scores (NES), p-values, and leading edge plots for top pathways
+* When `x` is a pathway name: Returns an enrichment plot showing the running
+        enrichment score for the specified pathway
+
 # `egt_plot_results`: Visualize enrichment results using simple plot
 
 ## Description
@@ -302,31 +340,6 @@ Zhiming Ye
 
 a ggplot2 object
 
-# `egt_plot_umap`: Visualize results generated form `EnrichGT()` using UMAP
-
-## Description
-
-A word frequency matrix represents the frequency of words or tokens across different documents or text samples. Each row corresponds to a document, and each column represents a word or token, with the cell values indicating the frequency of the respective word in that document.However, high-dimensional data like word frequency matrices can be challenging to interpret directly. To make such data easier to analyze, we can reduce its dimensionality and visualize the patterns or clusters in a 2D or 3D space. UMAP (Uniform Manifold Approximation and Projection) is a powerful, non-linear dimensionality reduction technique widely used for this purpose.
-
-## Usage
-
-```r
-egt_plot_umap(x, ...)
-```
-
-## Arguments
-
-* `x`: an EnrichGT object
-* `...`: Other param
-
-## Author
-
-Zhiming Ye
-
-## Value
-
-a ggplot2 object
-
 # `egt_recluster_analysis`: Parse enrichment results and further clustering and visualizing
 
 ## Description
@@ -341,7 +354,7 @@ The main purpose of developing this package is to provide a lightweight and prac
 ```r
 egt_recluster_analysis(
   x,
-  ClusterNum = 17,
+  ClusterNum = 10,
   P.adj = 0.05,
   force = F,
   nTop = 10,
@@ -446,7 +459,7 @@ Zhiming Ye. Part of functions were inspired by `clusterProfiler` but with brand 
 
 a data.frame with ID, terms and genes
 
-# `database_kegg`: Get KEGG database from KEGG website
+# `database_KEGG`: Get KEGG database from KEGG website
 
 ## Description
 
@@ -455,9 +468,9 @@ KEGG is a commercialized database. So EnrichGT can't pre-cache them locally. You
 ## Usage
 
 ```r
-database_kegg(kegg_organism="hsa",OrgDB = org.Hs.eg.db,kegg_modules=F,local_cache=F)
+database_KEGG(kegg_organism="hsa",OrgDB = org.Hs.eg.db,kegg_modules=F,local_cache=F)
 
-database_kegg_show_organism()
+database_KEGG_show_organism()
 ```
 
 ## Arguments

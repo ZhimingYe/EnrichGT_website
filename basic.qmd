@@ -76,10 +76,22 @@ GSEAexample <- egt_gsea_analysis(
             database = 
               database_from_gmt("gmt_file.gmt") # <2>
             )
-egt_plot_results(GSEAexample) # showing GSEA result
+egt_plot_results(GSEAexample) # <3>
+egt_plot_gsea(GSEAexample$Description[1],
+              genes = genes_with_weights(genes = DEGexample2$...1, 
+                                              weights = DEGexample2$log2FoldChange),
+              database = database_GO_BP(org.Hs.eg.db)) # <4>
+egt_plot_gsea(GSEAexample$Description[1:10,], # <5>
+              genes = genes_with_weights(genes = DEGexample2$...1, 
+                                              weights = DEGexample2$log2FoldChange),
+              database = database_GO_BP(org.Hs.eg.db)) # <6>
 ```
 1. GSEA is also supported, see [enrichment details](enrichment_core.qmd). `genes_with_weights()` is used to generate weighted genes; 
 2. Additional pathway information like GMT file or table is also supported. See [Database usage](database.qmd). 
+3. Showing basic bar plot for results, see more in [visualization help](visualize.qmd); 
+4. Single ranking plot, see more in [visualization help](visualize.qmd); 
+5. Please subset it to avoid too many results and the waste of time; 
+6. Showing table-like result in figure, see more in [visualization help](visualize.qmd). 
 
 # Fusing ORA results
 

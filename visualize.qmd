@@ -53,14 +53,14 @@ HTML `gt` table satisfied most of things, but for others. Though we don't want t
 
 The Dot Plot provide basic viewing of results. So it supports both simple enrichment result `data.frame` and re-enriched `egt_object`.
 
-You can adjust this figure by these params: 
+You can adjust this figure by these params:
 
-* `ntop`: Show top N in each cluster. In default, for origin enriched result, showing top 15; for re-clustered object, showing top 5 in each cluster.
-* `showIDs`: bool, show pathway IDs or not. Default is FALSE
-* `max_len_descript`: the label format length, default as 40.
-* `P.adj`: If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
-* `low.col`: the color for the lowest
-* `hi.col`: the color for the highest
+-   `ntop`: Show top N in each cluster. In default, for origin enriched result, showing top 15; for re-clustered object, showing top 5 in each cluster.
+-   `showIDs`: bool, show pathway IDs or not. Default is FALSE
+-   `max_len_descript`: the label format length, default as 40.
+-   `P.adj`: If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
+-   `low.col`: the color for the lowest
+-   `hi.col`: the color for the highest
 
 ### Ploting ORA result
 
@@ -86,14 +86,92 @@ egt_plot_results(resGSEA)
 egt_plot_results(re_enrich)
 ```
 
-# Re-enrichment dimensionality reduction plot
+# Additional GSEA plots
 
-UMAP plot only supports re-enriched `egt_object`, to show the dimensionality reduction view of enriched results.
+Since version 0.8.6, EnrichGT provides a function called `egt_plot_gsea()` to help users to get typical ranking plots. If you pass a pathway name to the first param of this function, `egt_plot_gsea()` will return a ranking plot of single pathway. For multiple pathway, you need to subset the `data.frame` result of `egt_gsea_analysis()`. 
 
-A word frequency matrix represents the frequency of words or tokens across different documents or text samples. Each row corresponds to a document, and each column represents a word or token, with the cell values indicating the frequency of the respective word in that document.However, high-dimensional data like word frequency matrices can be challenging to interpret directly. To make such data easier to analyze, we can reduce its dimensionality and visualize the patterns or clusters in a 2D or 3D space. UMAP (Uniform Manifold Approximation and Projection) is a powerful, non-linear dimensionality reduction technique widely used for this purpose.
+The param contains: 
+
+* `x`: A GSEA result object. Can be either:
+* A data frame containing GSEA results (requires columns: pvalue, p.adjust, Description)
+* A character string specifying a single pathway name
+* `genes`: A character vector of ranked gene names. These should match the gene identifiers
+used in the GSEA analysis.
+* `database`: A character string specifying the gene set database name. This should correspond
+to the database used in the original GSEA analysis.
+
+::: {.callout-note}
+### Why multiple results need a `data.frame`
+
+You can see the result figure, we need the `NES` and `p-values` for display. 
+
+:::
+
+## Single ranking plot
 
 ```{r}
-#| fig-width: 10
-#| fig-height: 10
-egt_plot_umap(re_enrich)
+resGSEA <- egt_gsea_analysis(genes = 
+                           genes_with_weights(genes = DEGexample$...1, 
+                                              weights = DEGexample$log2FoldChange),
+                         database = database_GO_BP(org.Hs.eg.db)
+                         )
+class(resGSEA$Description[1])# <1>
+resGSEA$Description[1] # <2>
+egt_plot_gsea(resGSEA$Description[1],
+              genes = genes_with_weights(genes = DEGexample$...1, 
+                                              weights = DEGexample$log2FoldChange),
+              database = database_GO_BP(org.Hs.eg.db))
+```
+
+1. This is a vector. 
+2. If you need the single-plot, all you pass to `egt_plot_gsea()` is the name of this pathway, subset from `resGSEA`. 
+
+## Table-like visualization GSEA result
+
+:::{.callout-warning}
+
+If you want to plot this plot, remember to filter the GSEA results to ~10 to ~20, you can base on `NES` or `p-values`. This is to avoid too many loading to this plotting. 
+
+:::
+
+```{r}
+class(resGSEA[1:8,]) # <1>
+resGSEA[1:8,] 
+egt_plot_gsea(resGSEA[1:8,], # <2>
+              genes = genes_with_weights(genes = DEGexample$...1, 
+                                              weights = DEGexample$log2FoldChange),
+              database = database_GO_BP(org.Hs.eg.db))
+```
+
+1. This is a `data.frame`. Please subset it to avoid too many results and the waste of time. 
+2. You need to subset data frame according to NES (suggests: `abs(NES)>1`) and p-value, too avoiding too many outputs and wasting. 
+
+# UMAP plot for re-enrichment (no longer supported)
+
+Before version 0.8.6, UMAP plot is provided in re-enriched `egt_object`, to show the dimensionality reduction view of enriched results.
+
+A word frequency matrix represents the frequency of words or tokens across different documents or text samples. Each row corresponds to a document, and each column represents a word or token, with the cell values indicating the frequency of the respective word in that document.However, high-dimensional data like word frequency matrices can be challenging to interpret directly. To make such data easier to analyze, we can reduce its dimensionality and visualize the patterns or clusters in a 2D or 3D space. UMAP (Uniform Manifold Approximation and Projection) is a powerful, non-linear dimensionality reduction technique widely used for this purpose. 
+
+But since 0.8.6, because `umap` and `ggrepel` have too many dependencies, and this function is not nesessary in most of cases. We now don't support it. If you still needs this figure, you can execute following code. 
+
+``` r
+library(umap)
+library(ggrepel)
+mat<-x@document_term_matrix
+umap_result <- umap::umap(mat)
+umap_df <- data.frame(ID=rownames(umap_result[["layout"]]),
+                      UMAP1 = umap_result$layout[, 1],
+                      UMAP2 = umap_result$layout[, 2])
+udf<-x@enriched_result |> left_join(umap_df,by="ID")
+fig<-ggplot(udf, aes(x = UMAP1, y = UMAP2, color = Cluster)) +
+  geom_point(size = 2) +
+  geom_text_repel(aes(label = Description),
+                  size = 3,
+                  max.overlaps = 20,
+                  box.padding = 0.3,
+                  point.padding = 0.2) +
+  labs(title = "Enrichment Results",
+        x = "UMAP1", y = "UMAP2") +
+  theme_classic()
+fig
 ```

@@ -10,7 +10,6 @@ toc-depth: 3
 toc-expand: true
 ---
 
-
 > Basic enrichment analysis involves performing a batch “dictionary lookup” for a set of genes to determine their associations. The most commonly used method is **over-representation analysis (ORA)**. If you also have information on weights, then **Gene Set Enrichment Analysis (GSEA)** is another classic choice.
 
 # Enrichment of genes
@@ -102,7 +101,7 @@ ora_result <- egt_enrichment_analysis(genes = genes_with_weights(DEGexample2$...
 Then, the output will automatically consider the proportion of up-regulated genes and down-regulated genes, and finally showing them in any results EnrichGT generated, like `data.frame`s, `gt` table or dot plots.
 :::
 
-For visualize, see [Ploting ORA result] for details.
+For visualize, see [ploting ORA results](visualize.qmd) for details. You can use \`egt_plot_results()\` to view the enriched result. See [re-enrichment](re_enrichment.qmd) and [FUSING](fusing.qmd) guides for more further analysis.
 
 # Enrichment of weighted genes (GSEA)
 
@@ -136,7 +135,7 @@ resExample <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes
                          )
 ```
 
-For visualize, see [ploting page](visualize.qmd) for details.
+GSEA results also support re-enrichment. Brifely, GSEA now supports two kinds of figures. For visualize, see [plotting page](visualize.qmd) for further guides. The most frequently used is the `bar plot` (by function), showing p-values and NES. And we provides two ranking figures (single figure / viewing by table) by warping plotting functions from `fgsea` - the function is called `egt_plot_gsea()`. 
 
 ```{r}
 #| echo: false

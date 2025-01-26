@@ -32,7 +32,7 @@ website:
     left: 
       "Developed by Zhiming Ye"
     right:
-      "Corresponding to EnrichGT Version 0.8"
+      "Corresponding to EnrichGT Version 0.8.6"
   repo-url: https://github.com/ZhimingYe/EnrichGT_website
   repo-actions: [source, issue]
   back-to-top-navigation: true
