@@ -49,7 +49,7 @@ See re-enrichment example for further demo.
 
 HTML `gt` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
 
-# Basic result plot
+## Basic result plot
 
 The Dot Plot provide basic viewing of results. So it supports both simple enrichment result `data.frame` and re-enriched `egt_object`.
 
@@ -62,7 +62,7 @@ You can adjust this figure by these params:
 -   `low.col`: the color for the lowest
 -   `hi.col`: the color for the highest
 
-### Ploting ORA result
+#### Ploting ORA result
 
 ```{r}
 #| fig-width: 7
@@ -70,7 +70,7 @@ You can adjust this figure by these params:
 egt_plot_results(ora_result)
 ```
 
-### Ploting GSEA result
+#### Ploting GSEA result
 
 ```{r}
 #| fig-width: 7
@@ -78,7 +78,7 @@ egt_plot_results(ora_result)
 egt_plot_results(resGSEA)
 ```
 
-### Ploting re-enrichment result
+#### Ploting re-enrichment result
 
 ```{r}
 #| fig-width: 7
@@ -86,47 +86,48 @@ egt_plot_results(resGSEA)
 egt_plot_results(re_enrich)
 ```
 
-# Additional GSEA plots
+## Additional GSEA plots
 
 Since version 0.8.6, EnrichGT provides a function called `egt_plot_gsea()` to help users to get typical ranking plots. If you pass a pathway name to the first param of this function, `egt_plot_gsea()` will return a ranking plot of single pathway. For multiple pathway, you need to subset the `data.frame` result of `egt_gsea_analysis()`. 
 
 The param contains: 
 
 * `x`: A GSEA result object. Can be either:
-* A data frame containing GSEA results (requires columns: pvalue, p.adjust, Description)
-* A character string specifying a single pathway name
-* `genes`: A character vector of ranked gene names. These should match the gene identifiers
-used in the GSEA analysis.
-* `database`: A character string specifying the gene set database name. This should correspond
-to the database used in the original GSEA analysis.
+  * A data frame containing GSEA results (requires columns: pvalue, p.adjust, Description)
+  * A character string specifying a single pathway name
+* `genes` and `database` should be the same as you doing `egt_gsea_analysis()`
 
 ::: {.callout-note}
-### Why multiple results need a `data.frame`
+#### Why multiple results need a `data.frame`
 
 You can see the result figure, we need the `NES` and `p-values` for display. 
 
 :::
 
-## Single ranking plot
+### Single ranking plot
+
+You need to prepare your favourite pathway's name: 
 
 ```{r}
-resGSEA <- egt_gsea_analysis(genes = 
-                           genes_with_weights(genes = DEGexample$...1, 
-                                              weights = DEGexample$log2FoldChange),
-                         database = database_GO_BP(org.Hs.eg.db)
-                         )
 class(resGSEA$Description[1])# <1>
 resGSEA$Description[1] # <2>
+```
+
+1. This is a vector. 
+2. If you need the single-plot, all you pass to `egt_plot_gsea()` is the name of this pathway, subset from `resGSEA`. 
+
+And then using `egt_plot_gsea()` for drawing. The other params should be the **same** as you provided in origin GSEA analysis. 
+
+```{r}
 egt_plot_gsea(resGSEA$Description[1],
               genes = genes_with_weights(genes = DEGexample$...1, 
                                               weights = DEGexample$log2FoldChange),
               database = database_GO_BP(org.Hs.eg.db))
 ```
 
-1. This is a vector. 
-2. If you need the single-plot, all you pass to `egt_plot_gsea()` is the name of this pathway, subset from `resGSEA`. 
 
-## Table-like visualization GSEA result
+
+### Table-like visualization GSEA result
 
 :::{.callout-warning}
 
@@ -134,19 +135,27 @@ If you want to plot this plot, remember to filter the GSEA results to ~10 to ~20
 
 :::
 
+You need to subset the origin GSEA result `data.frame` according to `NES` or `p-val` to gain your targets. In this demo, we choose row 1 to row 8.  
+
 ```{r}
 class(resGSEA[1:8,]) # <1>
-resGSEA[1:8,] 
-egt_plot_gsea(resGSEA[1:8,], # <2>
-              genes = genes_with_weights(genes = DEGexample$...1, 
-                                              weights = DEGexample$log2FoldChange),
-              database = database_GO_BP(org.Hs.eg.db))
+resGSEA[1:8,] # <2>
 ```
 
 1. This is a `data.frame`. Please subset it to avoid too many results and the waste of time. 
 2. You need to subset data frame according to NES (suggests: `abs(NES)>1`) and p-value, too avoiding too many outputs and wasting. 
 
-# UMAP plot for re-enrichment (no longer supported)
+And then using `egt_plot_gsea()` for drawing. The other params should be the **same** as you provided in origin GSEA analysis. 
+
+```{r}
+egt_plot_gsea(resGSEA[1:8,], 
+              genes = genes_with_weights(genes = DEGexample$...1, 
+                                              weights = DEGexample$log2FoldChange),
+              database = database_GO_BP(org.Hs.eg.db))
+```
+
+
+## UMAP plot for re-enrichment (no longer supported)
 
 Before version 0.8.6, UMAP plot is provided in re-enriched `egt_object`, to show the dimensionality reduction view of enriched results.
 

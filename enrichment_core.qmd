@@ -101,7 +101,7 @@ ora_result <- egt_enrichment_analysis(genes = genes_with_weights(DEGexample2$...
 Then, the output will automatically consider the proportion of up-regulated genes and down-regulated genes, and finally showing them in any results EnrichGT generated, like `data.frame`s, `gt` table or dot plots.
 :::
 
-For visualize, see [ploting ORA results](visualize.qmd) for details. You can use \`egt_plot_results()\` to view the enriched result. See [re-enrichment](re_enrichment.qmd) and [FUSING](fusing.qmd) guides for more further analysis.
+For visualize, see [ploting ORA results](visualize.qmd) for details. You can use `egt_plot_results()` to view the enriched result. And you can see [re-enrichment](re_enrichment.qmd) and [FUSING](fusing.qmd) guides for more further analysis.
 
 # Enrichment of weighted genes (GSEA)
 
@@ -135,7 +135,7 @@ resExample <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes
                          )
 ```
 
-GSEA results also support re-enrichment. Brifely, GSEA now supports two kinds of figures. For visualize, see [plotting page](visualize.qmd) for further guides. The most frequently used is the `bar plot` (by function), showing p-values and NES. And we provides two ranking figures (single figure / viewing by table) by warping plotting functions from `fgsea` - the function is called `egt_plot_gsea()`. 
+GSEA results also support [re-enrichment](re_enrichment.qmd). Brifely, GSEA now supports two kinds of figures. For visualize, see [plotting page](visualize.qmd) for further guides. The most frequently used is the `bar plot` (by function `egt_plot_results`), showing p-values and NES. And we provides two ranking figures (single figure / viewing by table) by warping plotting functions from `fgsea` - the function is called `egt_plot_gsea()`. 
 
 ```{r}
 #| echo: false

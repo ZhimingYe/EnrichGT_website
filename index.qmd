@@ -17,6 +17,30 @@ toc-expand: true
 #| include: false
 library(Rd2md)
 render_refman("../EnrichGT/","./pkgfuns.qmd")
+# 定义要插入的内容
+header <- c(
+  "---", 
+  "title: \"Package Functions Help\"",
+  "toc: true", 
+  "---",
+  ""
+)
+
+# 指定目标文件路径
+file_path <- "pkgfuns.qmd"  # 替换为你的实际文件路径
+
+# 读取原文件内容（如果存在）
+if (file.exists(file_path)) {
+  original_content <- readLines(file_path)
+} else {
+  original_content <- character()
+}
+
+# 合并新内容和原内容
+new_content <- c(header, original_content)
+
+# 写入新内容到文件
+writeLines(new_content, file_path)
 ```
 
 # Intro
