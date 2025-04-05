@@ -8,8 +8,8 @@ toc: true
 ```
 Type: Package
 Package: EnrichGT
-Title: EnrichGT - all in one enrichment analysis soluction
-Version: 0.8.7
+Title: EnrichGT - all in one enrichment analysis solution
+Version: 1.0.3
 Author: Zhiming Ye
 Maintainer: Zhiming Ye <garnetcrow@hotmail.com>
 Description: Do biological enrichment analysis and parsing and clustering
@@ -23,6 +23,7 @@ Imports:
     BiocManager,
     cli,
     dplyr,
+    ellmer,
     fgsea,
     fontawesome,
     forcats,
@@ -48,8 +49,10 @@ Imports:
     utils,
     xfun
 Suggests: 
+    devtools,
     readr,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tidyverse
 LinkingTo: 
     Rcpp
 Config/testthat/edition: 3
@@ -81,12 +84,13 @@ convert_annotations_genes(genes, from_what, to_what, OrgDB)
 
 a data.frame
 
-# `database_from_gmt`: parse GMT files file to a data.frame
+# `database_from_gmt`: Parse GMT format gene set files
 
 ## Description
 
-Read `.gmt` files. You can download them from https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
-WikiPathway database also provides pre-built GMT files (https://data.wikipathways.org/current/gmt/). In default they are recorded as ENTREZ IDs, so you need to provide proper species database (e.g. org.Hs.eg.db for human), to database_from_gmt function and EnrichGT will automatically convert ENTREZ IDs to gene symbols for enrichment analysis.
+Reads gene set files in GMT format (e.g., from MSigDB or WikiPathways) and converts
+them to a data frame suitable for enrichment analysis. Can optionally convert ENTREZ IDs
+to gene symbols.
 
 ## Usage
 
@@ -96,23 +100,43 @@ database_from_gmt(gmtfile, OrgDB = NULL, convert_2_symbols = T)
 
 ## Arguments
 
-* `gmtfile`: gmt file path
-* `OrgDB`: Only need when converting genes, human = org.Hs.eg.db, mouse = org.Mm.eg.db, search BioConductor website for further help. Default is NULL.
-* `convert_2_symbols`: Force to convert numeric gene ids (as ENTREZIDs) to gene symbols
+* `gmtfile`: Path to GMT format file
+* `OrgDB`: Annotation database for ID conversion (e.g., org.Hs.eg.db for human).
+Required if convert_2_symbols=TRUE.
+* `convert_2_symbols`: Logical indicating whether to convert ENTREZ IDs to gene symbols.
+Default is TRUE.
 
 ## Author
 
-cited from https://github.com/YuLab-SMU/gson/blob/main/R/GMT.R . The further Cache system is written by Zhiming Ye.
+Original GMT parser by Guangchuang Yu (https://github.com/YuLab-SMU/gson).
+  Cache system and enhancements by Zhiming Ye.
 
 ## Value
 
-data.frame
+A data frame with columns:
+
+* term: Gene set name
+* gene: Gene identifiers (symbols or ENTREZ IDs)
+
+If input has 3 columns, includes an additional ID column.
+
+## Examples
+
+```r
+# Read MSigDB hallmark gene sets
+gmt_file <- system.file("extdata", "h.all.v7.4.symbols.gmt", package = "EnrichGT")
+gene_sets <- database_from_gmt(gmt_file)
+
+# Read WikiPathways with ENTREZ to symbol conversion  
+gmt_file <- "wikipathways-20220310-gmt-Homo_sapiens.gmt"
+gene_sets <- database_from_gmt(gmt_file, OrgDB = org.Hs.eg.db)
+```
 
 # `egt_compare_groups`: 2-Group Comparison of enrichment results and further clustering and visualizing
 
 ## Description
 
-See `?EnrichGT()`
+See `?egt_enrichment_analysis()`
 
 ## Usage
 
@@ -159,43 +183,51 @@ Zhiming Ye
 `List` containing multiple `EnrichGT_obj` objects.
 The `List` contains objects with overlapped enriched terms, unique enrich terms.
 
-# `egt_enrichment_analysis`: A C++ accelerated universal enrichment analyzer (Over-Representation Analysis (ORA))
+# `egt_enrichment_analysis`: Perform Over-Representation Analysis (ORA)
 
 ## Description
 
-ORA is a statistical method used to identify biological pathways or gene sets that are significantly enriched in a given list of genes (e.g., differentially expressed genes). The method compares the proportion of genes in the target list that belong to a specific category (e.g., pathways, GO terms) to the expected proportion in the background gene set.
-To accelerate the computation in ORA analysis, `EnrichGT` have implemented a function that leverages C++ for high-performance computation. The core algorithm utilizes hash tables for efficient lookup and counting of genes across categories. Also It provides multi-Core parallel calculation by package `parallel`.
+ORA compares the proportion of genes in your target list that belong to specific
+categories (pathways, GO terms etc.) against the expected proportion in a background
+set. This implementation uses hash tables for efficient gene counting and supports
+parallel processing for analyzing multiple gene lists.
 
 ## Usage
 
 ```r
-res <- egt_enrichment_analysis(genes = DEGtable$Genes,
-database = database_GO_BP(org.Hs.eg.db))
-
-res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",...),
-database = database_GO_ALL(org.Hs.eg.db))
-
-res <- egt_enrichment_analysis(genes = genes_with_weights(geneSymbols, log2FC),
-database = database_kegg(kegg_organism="hsa",OrgDB = org.Hs.eg.db))
-
-res <- egt_enrichment_analysis(genes = c("TP53","CD169","CD68","CD163",...),
-database = database_from_gmt("MsigDB_Hallmark.gmt"))
-
-res <- egt_enrichment_analysis(list(Macrophages=c("CD169","CD68","CD163"),
-Fibroblast=c("COL1A2","COL1A3"),...),
- database = database_from_gmt("panglaoDB.gmt"))
+egt_enrichment_analysis(
+  genes,
+  database,
+  p_adj_methods = "BH",
+  p_val_cut_off = 0.5,
+  background_genes = NULL,
+  min_geneset_size = 10,
+  max_geneset_size = 500,
+  multi_cores = 0
+)
 ```
 
 ## Arguments
 
-* `genes`: a vector of gene ids like `c("TP53","CD169","CD68","CD163"...)`.If you have genes from multiple source or experiment group, you can also pass a list with gene ids in it. For Example , `list(Macrophages=c("CD169","CD68","CD163"),Fibroblast=c("COL1A2","COL1A3))`.The genes should be match in the second param `database`'s `gene` column. For example, if database provides Ensembl IDs, you should input Ensembl IDs. But in default databases provided by `EnrichGT` is gene symbols.Of note, since ver 0.8, genes argument supports inputs from genes_with_weights(), EnrichGT will use the whole DEG for ORA, and final split gene candidated into high-expressing and lowly-expressing according to weights.
-* `database`: a database data frame, can contain 3 columns (ID, Pathway_Name, Genes) or just 2 columns (Pathway_Name, Genes). You can read a data frame and pass it through this or run `database_GO_CC()` to get them, see example.You can run `database_GO_CC()` to see an example.The ID column is not necessary. EnrichGT contains several databases, functions about databases are named starts with `database_...`, like `database_GO_BP()` or `database_Reactome()`.The default gene in each database EnrichGT provided to input is `GENE SYMBOL` (like TP53, not 1256 or ENSG...), not `ENTREZ ID` or `Ensembl ID`.It will be more convince for new users. Avaliable databases includes `database_GO_BP()`, `database_GO_CC()`, `database_GO_MF()` and `database_Reactome()`.You can add more database by downloading MsigDB (https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp)'s GMT files. It can be load by using `database_from_gmt(FILE_PATH)`.If you only have simple a table, you can also pass a data frame through this arguement. Of note, it should contains at least 2 coloumn (colnames(df) = c("Terms","Genes)), the first is term names and the second are the corresponding genes. If you have term ids, you can add a `ID` column at the first column, and `Terms` becomes the second column and `Genes` the third.
-* `p_adj_methods`: one of "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"
-* `p_val_cut_off`: adjusted pvalue cutoff on enrichment tests to report
-* `background_genes`: background genes. If missing, the all genes listed in the database
-* `min_geneset_size`: minimal size of genes annotated for testing
-* `max_geneset_size`: maximal size of genes annotated for testing
-* `multi_cores`: multi_cores (Experimental), only used when analysis a list of genes (multi-source or groups). Set to 0 or 1 to disable. May use lots of RAM.
+* `genes`: Input genes, either:
+* Character vector of gene IDs (e.g., `c("TP53","BRCA1")`)
+* Named numeric vector from `genes_with_weights()` (will split by expression direction)
+* List of gene vectors for multiple comparisons (e.g., by cell type)
+* `database`: Gene set database, either:
+* Built-in database from `database_GO_BP()`, `database_KEGG()` etc.
+* Custom data frame with columns: (ID, Pathway_Name, Genes) or (Pathway_Name, Genes)
+* GMT file loaded via `database_from_gmt()`
+* `p_val_cut_off`: Adjusted p-value cutoff (default 0.5)
+* `background_genes`: Custom background genes (default: all genes in database)
+* `min_geneset_size`: Minimum genes per set (default 10)
+* `max_geneset_size`: Maximum genes per set (default 500)
+* `multi_cores`: (Please don't use this since it has several known bugs) Number of cores for parallel processing (default 0 = serial)
+* `p_adj_method`: Multiple testing correction method (default "BH" for Benjamini-Hochberg)
+
+## Details
+
+Identifies enriched biological pathways or gene sets in a gene list using
+high-performance C++ implementation with parallel processing support.
 
 ## Author
 
@@ -203,49 +235,115 @@ Zhiming Ye
 
 ## Value
 
-a data frame with ORA results.
+A data frame with columns:
 
-# `egt_gsea_analysis`: Gene Set Enrichment Analysis (GSEA) by EnrichGT
+* ID: Gene set identifier
+* Description: Gene set name
+* GeneRatio: Enriched genes / input genes
+* BgRatio: Set genes / background genes
+* pvalue: Raw p-value
+* p.adjust: Adjusted p-value
+* geneID: Enriched genes
+* Count: Number of enriched genes
+
+For weighted input, additional columns show up/down regulated genes.
+
+## Examples
+
+```r
+# Basic ORA with GO Biological Processes
+genes <- c("TP53", "BRCA1", "EGFR", "CDK2")
+res <- egt_enrichment_analysis(genes, database_GO_BP())
+
+# ORA with DEG results (split by direction)
+deg_genes <- genes_with_weights(DEG$gene, DEG$log2FC)
+res <- egt_enrichment_analysis(deg_genes, database_KEGG())
+
+# Multi-group ORA with parallel processing
+gene_lists <- list(
+  Macrophages = c("CD68", "CD163", "CD169"),
+  Fibroblasts = c("COL1A1", "COL1A2", "ACTA2")
+)
+res <- egt_enrichment_analysis(gene_lists, database_Reactome(), multi_cores=0)
+```
+
+# `egt_gsea_analysis`: Perform Gene Set Enrichment Analysis (GSEA)
 
 ## Description
 
-A warpper of `fgsea::fgsea()`.
-GSEA is a computational method used to determine whether predefined gene sets (e.g., pathways, GO terms) are statistically enriched in a ranked list of genes. Unlike ORA, GSEA considers the entire gene list and focuses on the cumulative distribution of gene ranks to identify coordinated changes.
-The fgsea (https://github.com/ctlab/fgsea) package is an R tool that implements an accelerated version of GSEA. It uses precomputed statistical methods and efficient algorithms to dramatically speed up enrichment analysis, especially for large datasets.
+GSEA analyzes whether predefined gene sets show statistically significant enrichment
+at the top or bottom of a ranked gene list. This implementation uses the fast fgsea
+algorithm from the fgsea package.
 
 ## Usage
 
 ```r
-res <- egt_gsea_analysis(genes = genes_with_weights(genes = DEG$genes, weights = DEG$log2FoldChange),
-database = database_GO_BP())
-
-res <- egt_gsea_analysis(genes = genes_with_weights(genes = PCA_res$genes,weights =PCA_res$PC1_loading),
-database = database_from_gmt("MsigDB_Hallmark.gmt"))
+egt_gsea_analysis(
+  genes,
+  database,
+  p_val_cut_off = 0.5,
+  min_geneset_size = 10,
+  max_geneset_size = 500,
+  gseaParam = 1
+)
 ```
 
 ## Arguments
 
-* `genes`: a named numeric vector, for example c(`TP53`=1.2,`KRT15`=1.1,`IL1B`=1.0,`PMP22` = 0.5,`FABP1` = -0.9, `GLUT1` = -2).The number is the weight of each gene, can use the logFC form DEG analysis results instead. Also NMF or PCA's loading can also be used.`EnrichGT` provides a `genes_with_weights(genes,weights)` function to build this numeric vector. Importantly, this vector should be !SORTED! for larger to smaller.
-* `database`: a database data frame, can contain 3 columns (ID, Pathway_Name, Genes) or just 2 columns (Pathway_Name, Genes). You can read a data frame and pass it through this or run `database_GO_CC()` to get them, see example.The ID column is not necessary. EnrichGT contains several databases, functions about databases are named starts with `database_...`, like `database_GO_BP()` or `database_Reactome()`.The default gene in each database EnrichGT provided to input is `GENE SYMBOL` (like TP53, not 1256 or ENSG...), not `ENTREZ ID` or `Ensembl ID`. It will be more convince for new users.Avaliable databases includes `database_GO_BP()`, `database_GO_CC()`, `database_GO_MF()` and `database_Reactome()`.You can add more database by downloading MsigDB (https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp)'s GMT files. It can be load by using `database_from_gmt(FILE_PATH)`.If you only have simple a table, you can also pass a data frame through this arguement. Of note, it should contains at least 2 coloumn (colnames(df) = c("Terms","Genes)), the first is term names and the second are the corresponding genes. If you have term ids, you can add a `ID` column at the first column, and `Terms` becomes the second column and `Genes` the third.
-* `p_val_cut_off`: adjusted pvalue cutoff on enrichment tests to report
-* `min_geneset_size`: minimal size of genes annotated for testing
-* `max_geneset_size`: maximal size of genes annotated for testing
-* `gseaParam`: other param passing to fgsea
-* `p_adj_methods`: one of "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"
+* `genes`: A named numeric vector of ranked genes where:
+* Names are gene identifiers
+* Values are ranking metric (e.g., log2 fold change, PCA loading)Must be sorted in descending order (use `genes_with_weights()` to prepare)
+* `database`: Gene set database, either:
+* Built-in database from `database_GO_BP()`, `database_KEGG()` etc.
+* Custom data frame with columns: (ID, Pathway_Name, Genes) or (Pathway_Name, Genes)
+* GMT file loaded via `database_from_gmt()`
+* `p_val_cut_off`: Adjusted p-value cutoff (default 0.5)
+* `min_geneset_size`: Minimum genes per set (default 10)
+* `max_geneset_size`: Maximum genes per set (default 500)
+* `gseaParam`: GSEA parameter controlling weight of ranking (default 1)
+* `p_adj_method`: Multiple testing correction method (default "BH" for Benjamini-Hochberg)
+
+## Details
+
+Identifies enriched biological pathways in a ranked gene list using the fgsea algorithm.
 
 ## Author
 
-warpped from fgsea package.
+Based on fgsea package by Alexey Sergushichev et al.
 
 ## Value
 
-a data frame
+A data frame with columns:
+
+* ID: Gene set identifier
+* Description: Gene set name
+* ES: Enrichment score
+* NES: Normalized enrichment score
+* pvalue: Raw p-value
+* p.adjust: Adjusted p-value
+* core_enrichment: Leading edge genes
+
+## Examples
+
+```r
+# Using differential expression results
+ranked_genes <- genes_with_weights(DEG$gene, DEG$log2FC)
+res <- egt_gsea_analysis(ranked_genes, database_GO_BP())
+
+# Using PCA loadings
+ranked_genes <- genes_with_weights(rownames(pca$rotation), pca$rotation[,1])
+res <- egt_gsea_analysis(ranked_genes, database_KEGG())
+
+# Custom gene sets from GMT file
+ranked_genes <- genes_with_weights(genes, weights)
+res <- egt_gsea_analysis(ranked_genes, database_from_gmt("pathways.gmt"))
+```
 
 # `egt_infer_act`: Infering Pathway or Transcript Factors activity from EnrichGT meta-gene modules
 
 ## Description
 
-Only supports gene symbols. so you must use enrichedObj |> setReadable(OrgDb = xxx,keyType = "ENTREZID") |> EnrichGT() . Do Not supports ENTREZIDs!
+Only supports gene symbols.
 [PROGENy](https://saezlab.github.io/progeny/) is a comprehensive resource containing a curated collection of pathways and their target genes, with weights for each interaction.
 [CollecTRI](https://github.com/saezlab/CollecTRI) is a comprehensive resource containing a curated collection of TFs and their transcriptional targets compiled from 12 different resources. This collection provides an increased coverage of transcription factors and a superior performance in identifying perturbed TFs compared to our previous.
 If when doing re-enrichment, you select a high number of clusters, that may cause low gene number in each meta-gene module, and then can't be infered sucessfully. So if result is empty, please increase the number of re-clustering when doing it.
@@ -268,14 +366,68 @@ Zhiming Ye, Saez-Rodriguez Lab (The decoupleR package, https://saezlab.github.io
 
 ## Value
 
-a `compareCluster` result from `clusterProfiler`
+an ORA result list
+
+# `egt_llm_summary`: Summarize EnrichGT results using LLM
+
+## Description
+
+This function uses a Large Language Model (LLM) to generate summaries for
+pathway clusters and gene modules in an EnrichGT_obj object.
+
+## Usage
+
+```r
+egt_llm_summary(x, chat, lang = "English")
+```
+
+## Arguments
+
+* `x`: An EnrichGT_obj object created by `[egt_recluster_analysis](egt_recluster_analysis)`.
+* `chat`: An LLM chat object created by the `ellmer` package.
+* `lang`: Language pass to LLM. Can be `English` or `Chinese`.
+
+## Note
+
+It is recommended not to add system prompts when creating the chat object.
+The function provides its own carefully crafted prompts for biological analysis.
+
+## References
+
+For more information about creating chat objects, see the
+[ellmer package documentation](https://ellmer.tidyverse.org/index.html).
+
+## Seealso
+
+`[egt_recluster_analysis](egt_recluster_analysis)` to create the input object.
+
+## Value
+
+Returns the input EnrichGT_obj object with added LLM annotations in
+the `LLM_Annotation` slot. The annotations include:
+
+* `pathways`: Summaries of pathway clusters
+* `genes_and_title`: Summaries of gene modules and their titles
+
+## Examples
+
+```r
+# Create LLM chat object
+chat <- chat_deepseek(api_key = YOUR_API_KEY, model = "deepseek-chat", system_prompt = "")
+
+# Run enrichment analysis and get EnrichGT_obj
+re_enrichment_results <- egt_recluster_analysis(...)
+
+# Get LLM summaries
+re_enrichment_results <- egt_llm_summary(re_enrichment_results, chat)
+```
 
 # `egt_plot_gsea`: Generate GSEA Enrichment Plots
 
 ## Description
 
-This function creates graphical representations of Gene Set Enrichment Analysis (GSEA) results, 
-including either a multi-panel GSEA table plot for multiple pathways or a single pathway 
+This function creates graphical representations of Gene Set Enrichment Analysis (GSEA) results,
+including either a multi-panel GSEA table plot for multiple pathways or a single pathway
 enrichment plot. The visualization leverages the `fgsea` package's plotting functions.
 
 ## Usage
@@ -323,6 +475,7 @@ egt_plot_results(
   ntop = NULL,
   showIDs = F,
   max_len_descript = 40,
+  keepAll = F,
   ...,
   P.adj = NULL
 )
@@ -347,14 +500,11 @@ Zhiming Ye
 
 a ggplot2 object
 
-# `egt_recluster_analysis`: Parse enrichment results and further clustering and visualizing
+# `egt_recluster_analysis`: Cluster and re-enrichment enrichment results
 
 ## Description
 
-Cluster enrichment results based on hit genes for ORA (e.g, typical GO enrichment) or core enrichment from GSEA using term frequency analysis. This provides a clearer view of biological relevance by focusing on the genes that matter most.
-Gene enrichment analysis can often be misleading due to the redundancy within gene set databases and the limitations of most enrichment tools. Many tools, by default, only display a few top results and fail to filter out redundancy. This can result in both biological misinterpretation and valuable information being overlooked.
-For instance, high expression of certain immune genes can cause many immune-related gene sets to appear overrepresented. However, a closer look often reveals that these gene sets are derived from the same group of genes, which might represent only a small fraction. Less than 1/10 of the differentially expressed genes (DEGs). What about the other 9/10?  Do they hold no biological significance?
-The main purpose of developing this package is to provide a lightweight and practical solution to the problems mentioned above.
+Performs hierarchical clustering on enrichment results (ORA or GSEA) based on gene-term associations to reduce redundancy and improve biological interpretation. The function helps identify coherent groups of related terms while preserving important but less significant findings.
 
 ## Usage
 
@@ -372,20 +522,31 @@ egt_recluster_analysis(
 
 ## Arguments
 
-* `x`: an enrichment result from `clusterProfiler`, or a `data.frame` containing result from `clusterProfier`. To perform fusing multi-database enrichment results, please give a `list` object.
-* `ClusterNum`: how many cluster will be clustered
-* `P.adj`: p.adjust cut-off. To avoid slow visualization, you can make stricter p-cut off.
-* `force`: ignore all auto-self-checks, which is useful
-* `nTop`: keep n top items according to p-adj in each cluster.
-* `method`: the agglomeration method to be used. This should be (an unambiguous abbreviation of) one of "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
-* `...`: Others options.
+* `x`: Enrichment result from `EnrichGT` or `clusterProfiler`. For multi-database results, provide a `list`.
+* `ClusterNum`: Number of clusters to create (default: 10).
+* `P.adj`: Adjusted p-value cutoff (default: 0.05). Stricter values improve performance.
+* `force`: Logical to bypass validation checks (default: FALSE).
+* `nTop`: Number of top terms to keep per cluster by p-value (default: 10).
+* `method`: Hierarchical clustering method (default: "ward.D2"). One of:
+"ward.D", "ward.D2", "single", "complete", "average" (UPGMA), 
+"mcquitty" (WPGMA), "median" (WPGMC), or "centroid" (UPGMC).
+* `...`: Additional arguments passed to clustering functions.
 
 ## Details
 
-For an ORA result, c("ID","Description","GeneRatio","pvalue","p.adjust","geneID","Count") should be contained;
- For GSEA, c("ID","Description","NES","pvalue","p.adjust","core_enrichment") should be contain.
- For `compareClusterResult`, a `compareClusterResult` object or a data-frame with additional `Cluster` column should be contained, others similar to ORA result.
- To perform fusing multi-database enrichment results, please give a `list` object.
+Input requirements by analysis type:
+ORA results:
+  Required columns: "ID", "Description", "GeneRatio", "pvalue", 
+  "p.adjust", "geneID", "Count"
+GSEA results:  
+  Required columns: "ID", "Description", "NES", "pvalue",
+  "p.adjust", "core_enrichment"
+compareClusterResult:
+  Either the compareClusterResult object or a data frame with:
+  - All ORA columns listed above
+  - Additional "Cluster" column
+Multi-database:
+  Provide as a named list of the above result types
 
 ## Author
 
@@ -393,19 +554,33 @@ Zhiming Ye
 
 ## Value
 
-an `EnrichGT_obj` object.
-slot `enriched_result` contains a data.frame with enriched results. `gt_object` contains `gt` object.
-you can use `obj@gt_object` to get it and use functions from `gt` like `gtsave`.
-`gene_modules` is a list containing meta-gene modules of each cluster.
-`pathway_clusters` contains pathways names in each cluster.
-`clustering_tree` contains the clustering tree object from `hclust()`, you can use other packages like `ggtree` for further visualization and analysis.
-`raw_enriched_result` contains raw table without selecting `nTop`.
+An `EnrichGT_obj` containing:
 
-# `genes_with_weights`: Return ranked gene list which is use for "GSEA" or other places
+* enriched_result: Filtered results data frame
+* gt_object: Formatted `gt` table object
+* gene_modules: List of gene modules per cluster
+* pathway_clusters: Pathway names by cluster
+* clustering_tree: `hclust` object for visualization
+* raw_enriched_result: Unfiltered results table
+
+## Examples
+
+```r
+# ORA example
+res <- egt_recluster_analysis(ora_result, ClusterNum=8)
+plot(res@clustering_tree)
+
+# GSEA example 
+gsea_res <- egt_recluster_analysis(gsea_result, method="average")
+gtsave(gsea_res@gt_object, "results.html")
+```
+
+# `genes_with_weights`: Create a ranked gene list for GSEA analysis
 
 ## Description
 
-Return ranked gene list which is use for "GSEA" or other places
+Takes gene identifiers and corresponding weights (like log2 fold changes) and returns
+a ranked vector suitable for Gene Set Enrichment Analysis (GSEA).
 
 ## Usage
 
@@ -415,8 +590,8 @@ genes_with_weights(genes, weights)
 
 ## Arguments
 
-* `genes`: A vector containing genes
-* `weights`: A vector contain weight of genes, typically like log2FC from DEG analysis
+* `genes`: Character vector of gene identifiers (e.g., gene symbols or ENTREZ IDs)
+* `weights`: Numeric vector of weights for each gene (typically log2 fold changes)
 
 ## Author
 
@@ -424,9 +599,20 @@ Zhiming Ye
 
 ## Value
 
-A ranked named numeric vector. Names of the numbers is the ENTREZID.
+A named numeric vector sorted in descending order by weight, where:
+  - Names are gene identifiers  
+  - Values are the corresponding weights
 
-# `database_GO_BP`: Get database for enrichment analysis
+## Examples
+
+```r
+# Example using differential expression results  
+genes <- c("TP53", "BRCA1", "EGFR")
+log2fc <- c(1.5, -2.1, 0.8) 
+ranked_genes <- genes_with_weights(genes, log2fc)
+```
+
+# `database_...`: Get database for enrichment analysis
 
 ## Description
 
@@ -486,4 +672,44 @@ database_KEGG_show_organism()
 * `OrgDB`: The AnnotationDbi database to convert KEGG gene ID to gene symbols. For human it would be `org.Hs.eg.db`, for mouse it would be `org.Mm.eg.db`. In AnnotationDbi there are many species, please search `AnnotationDbi` for other species annotation database.
 * `kegg_modules`: If TRUE, returns KEGG module; If FALSE returns KEGG pathways. In default, this is setted to FALSE to get mouse commonly used KEGG pathways.
 * `local_cache`: cache a copy in local working folder. It will be saved as a `.enrichgt_cache` file in working dictionary. The `.enrichgt_cache` is just a `.rds` file, feel free to read it using `readRDS()`.
+
+# `%-delete->%`: Filter Enrichment Results by Description Pattern
+
+## Description
+
+Infix operator to filter enrichment results by matching against Description field.
+For EnrichGT_obj objects, re-runs clustering analysis after filtering.
+
+## Usage
+
+```r
+x %-delete->% y
+```
+
+## Arguments
+
+* `x`: Either an EnrichGT_obj object or data.frame containing enrichment results
+* `y`: Regular expression pattern to match against Description field
+
+## Details
+
+This operator helps refine enrichment results by removing terms matching
+the given pattern from the Description field. When applied to EnrichGT_obj, it
+preserves all original parameters and re-runs the clustering analysis on the
+filtered results.
+
+## Value
+
+For EnrichGT_obj input: A new EnrichGT_obj with filtered and re-clustered results.
+For data.frame input: A filtered data.frame.
+
+## Examples
+
+```r
+# Filter out "ribosome" related terms
+filtered_results <- reenrichment_obj %-delete->% "ribosome"
+
+# Filter data.frame directly
+filtered_df <- df %-delete->% "metabolism"
+```
 

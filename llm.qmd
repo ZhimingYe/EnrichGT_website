@@ -1,0 +1,98 @@
+---
+title: "Large language models integration"
+format: 
+  html:
+    code-overflow: wrap
+    mermaid: 
+      theme: neutral
+toc: true
+toc-depth: 3
+toc-expand: true
+---
+
+# Background
+
+Large language models (LLMs) hold promise for interpreting biological data, yet their effectiveness is constrained when directly handling raw gene input or complex enrichment analysis results.
+
+**Challenges in Direct LLM Interpretation**
+
+1.  **Raw Gene Input Limitations:**
+    -   LLMs exhibit suboptimal performance when provided solely with gene symbols or identifiers (e.g., TP53, BRCA1, EGFR).
+    -   Without additional biological metadata, LLMs struggle to establish meaningful biological contexts and infer functional relationships among genes.
+2.  **Overwhelming Enrichment Results:**
+    -   Directly feeding complete outputs from Gene Ontology (GO) or Kyoto Encyclopedia of Genes and Genomes (KEGG) enrichment analyses into LLMs typically introduces excessive noise.
+    -   Context window limitations result in significant information loss, hindering the accurate interpretation of complex enrichment data.
+    -   Dense, unstructured enrichment tables challenge LLMs' ability to effectively prioritize and summarize critical biological insights.
+
+**Proposed Solution: Cluster-First Approach**
+
+To address these challenges, cluster-first methodology, exemplified by `EnrichGT`, is recommended. `EnrichGT` organizes enrichment results into meaningful clusters, thereby simplifying complexity and enhancing interpretability. Recently, `EnrichGT` has integrated support for LLM-driven interpretation, enabling LLMs to more effectively extract, summarize, and contextualize key biological insights from enrichment data.
+
+# How to use
+
+## Bring your LLM to R
+
+The LLM function is based on package `ellmer` (<https://ellmer.tidyverse.org/index.html>). It provides a uniform interface for most of LLMs in R.
+
+`ellmer` supports a wide variety of model providers:
+
+-   Anthropic’s Claude: `chat_anthropic()`.
+-   AWS Bedrock: `chat_aws_bedrock()`.
+-   Azure OpenAI: `chat_azure_openai()`.
+-   Databricks: `chat_databricks()`.
+-   DeepSeek: `chat_deepseek()`.
+-   GitHub model marketplace: `chat_github()`.
+-   Google Gemini: `chat_google_gemini()`.
+-   Groq: `chat_groq()`.
+-   Ollama: `chat_ollama()`.
+-   OpenAI: `chat_openai()`.
+-   OpenRouter: `chat_openrouter()`.
+-   perplexity.ai: `chat_perplexity()`.
+-   Snowflake Cortex: `chat_snowflake()` and `chat_cortex_analyst()`.
+-   VLLM: `chat_vllm()`.
+
+You can generate a model in R environment like this (Please refer to `ellmer` website):
+
+``` r
+library(ellmer)
+dsAPI <- "sk-**********" # your API key
+chat <- chat_deepseek(api_key = dsAPI, model = "deepseek-chat", system_prompt = "")
+```
+
+Some suggestions:
+
+1.  You may choose a cost-effective LLM model, as this type of annotation requires multiple calls. Also, make sure that both the LLM and the network are as stable as possible in order to obtain all the results (although `EnrichGT` has already been set to automatically retry multiple times).
+2.  Non-reflective models or fast-thinking models are generally better. Slow-thinking models (such as `DeepSeek-R1`) may result in long waiting times.
+3.  It is best to choose an LLM model that is relatively intelligent, has a substantial knowledge base, and exhibits low hallucination rates. In our (albeit limited) experience, although `GPT-4o` performs worse than `DeepSeek-V3-0324` in most benchmark tests, it may produce more reliable results in some cases due to the latter’s higher hallucination rate. You are free to choose whichever large model you prefer.
+4.  **NO** system prompts. And please adjust your LLM's tempretures according to your provider carefully. 
+
+## Summrize your results using LLM
+
+Just execute:
+
+``` r
+re_enrichment_results <- egt_llm_summary(re_enrichment_results, chat)
+```
+
+![](images/paste-2.png){width="700"}
+
+A typical run in `DeepSeek-V3-0324` will use \~ 6 mins.
+
+After complete, you can use `$` operator to access annotated results. For example, the annotation of `Cluster_1`:
+
+![](images/paste-1.png){width="700"}
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| error: false
+suppressPackageStartupMessages(library(EnrichGT))
+llm_annotated_obj <- readRDS("/Users/zhimingye/Documents/4Fun/EnrichGT/LLM_re_enrichment_results.rds")
+```
+
+```{r}
+llm_annotated_obj$Cluster_1
+```
+
+All the results are saved in the `result@LLM_Annotation` slot.

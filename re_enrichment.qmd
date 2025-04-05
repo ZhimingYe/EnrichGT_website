@@ -10,7 +10,6 @@ toc-depth: 3
 toc-expand: true
 ---
 
-
 ```{r}
 #| echo: false
 #| warning: false
@@ -117,6 +116,8 @@ str(re_enrich,max.level = 2)
 You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@gt_object` returns a `gt` object.
 :::
 
+## Access re-enriched data table
+
 You can simple `View(re_enrich@enriched_result)` for the first slot.
 
 ```{r}
@@ -125,7 +126,25 @@ table(x$Cluster) # You can see all enriched results splited into 17 clusters
 x
 ```
 
-But EnrichGT offers **more than** data frames. Please see [HTML reports (gt table)](visualize.qmd) for further visualization.
+## Access re-enriched HTML report
+
+EnrichGT offers **more than** data frames. Please see [HTML reports (gt table)](visualize.qmd) for further visualization.
+
+## Glance details of each module
+
+The re-enriched object from EnrichGT supports the `$` subset operator. You can use `RStudio` or `Positron`, type `$`, and then press the `Tab` key for auto-completion, as shown in the figure.
+
+In this example, all results haven't got any extra annotation. But `EnrichGT` supports Large language models (LLMs) based enrichment result annotations, you can refer to [large language models integration of EnrichGT](llm.qmd) page for more details. After performed LLM annotations, this step will display more information and insights about enrichment results.
+
+![](images/paste-1.png){width="700"}
+
+For example:
+
+```{r}
+re_enrich$Cluster_1
+```
+
+For more details, you can can use `@` to get objects in S4. Like `result@gene_modules` returns genes in cluster.
 
 # Infering TFs or pathway activity and more based on meta-gene modules
 
@@ -160,7 +179,7 @@ egt_plot_results(TF_Act$Cluster_3)
 ::: callout-tip
 #### Wants to interpret the regulator of whole inputted genes?
 
-`PROGENy` and `CollecTRI` can be used just like other database in ORA or GSEA enrichment, for example, the `database_GO_BP()`. See [Progeny Database] and [CollecTRI Database] page for detail.
+`PROGENy` and `CollecTRI` can be used just like other database in ORA or GSEA enrichment, for example, the `database_GO_BP()`. See \[Progeny Database\] and \[CollecTRI Database\] page for detail.
 
 Example:
 

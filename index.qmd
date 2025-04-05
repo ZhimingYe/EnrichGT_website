@@ -45,7 +45,9 @@ writeLines(new_content, file_path)
 
 # Intro
 
-![](Introduction.jpeg)
+![](EnrichGTlogo.png){fig-align="right" width="150"}
+
+![](Introduction.jpeg){width="2000"}
 
 ::: callout-tip
 ### Highlights
@@ -56,6 +58,7 @@ writeLines(new_content, file_path)
 | **Simple** input format, empowering non-pro users |
 | Re-clustering of enriched results provides **clear and actionable insights** |
 | User-friendly **HTML output** that is easy to read and interpret |
+| **AI (LLM)** based result annotation |
 | Do a series of things just in **ONE** package |
 :::
 
@@ -117,6 +120,7 @@ graph LR
 
     subgraph egt_recluster_analysis
         K1[Pretty table]
+        K2[AI Annotation]
         CC[cluster modules]
         MG[gene modules]
     end
@@ -142,6 +146,9 @@ graph LR
 
     CC --> K1
     MG --> K1
+
+    CC --> K2
+    MG --> K2
 
     CC --> P1
     C --> P2

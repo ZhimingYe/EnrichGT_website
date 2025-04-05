@@ -65,6 +65,21 @@ re_enrichment_results |> egt_infer_act(DB = "collectri", species = "human") # <5
 4. Viewing re-enrichment result as UMAP plot, see more in [visualization help](visualize.qmd); 
 5. Infering TF/pathway activity, experimential, might not be correct, see more in [re-enrichment help](re_enrichment.qmd). 
 
+# AI-based annotations
+
+See more in [large language models integration](llm.qmd)
+
+``` r
+library(ellmer)
+dsAPI <- "sk-**********" 
+chat <- chat_deepseek(api_key = dsAPI, model = "deepseek-chat", system_prompt = "") # <1>
+re_enrichment_results <- egt_llm_summary(re_enrichment_results, chat)
+re_enrichment_results$Cluster_1 # <2>
+```
+
+1. In this step we create a DeepSeek interface. We use `ellmer` for LLM support. For details please refer to [ellmer tidyverse website](https://ellmer.tidyverse.org/index.html). It provides a uniform interface for most of LLMs in R.
+2. Display annotation by LLM.  
+
 # GSEA
 
 If you have a set of genes with known weight like `log2FC`, or the loading from `PCA` or `NMF`...
