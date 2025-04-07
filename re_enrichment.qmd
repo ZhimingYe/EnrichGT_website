@@ -1,5 +1,5 @@
 ---
-title: "Re-enrich Enriched Results"
+title: "Second enrichment of enriched Results"
 format: 
   html:
     code-overflow: wrap
@@ -33,12 +33,6 @@ The enriched result is too messy? Clean up it!
 EnrichGT generates insightful results by simply constructing a term frequency matrix of genes enriched in pathways and performing clustering. While the results may not be statistically optimal, they offer significant interpretive insights.
 
 Print `?egt_recluster_analysis` for further help. But of note, you can adjust `ClusterNum` (Cluster the enrichment into N clusters) and `nTop` (Show how many top items in GT table) for a better result (the default is not all the best for your data).
-
-::: callout-tip
-#### Form clusterProfiler ?
-
-This can also supports the results from `clusterProfiler`, so you can use **any tool** to do this.
-:::
 
 ::: {.callout-note collapse="true"}
 #### Why the `re-enrichment` is necessary?
@@ -110,33 +104,31 @@ You can see the structure of `re_enrich` object above. The `re_enrich` object is
 str(re_enrich,max.level = 2)
 ```
 
-::: callout-tip
-#### How to get objects inside the S4 object?
-
-You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@gt_object` returns a `gt` object.
-:::
-
 ## Access re-enriched data table
 
 You can simple `View(re_enrich@enriched_result)` for the first slot.
 
 ```{r}
-x <- re_enrich@enriched_result # Get the re-enrichment result table
-table(x$Cluster) # You can see all enriched results splited into 17 clusters
-x
+re_enrich@enriched_result # Get the re-enrichment result table
 ```
 
 ## Access re-enriched HTML report
 
-EnrichGT offers **more than** data frames. Please see [HTML reports (gt table)](visualize.qmd) for further visualization.
+EnrichGT offers **more than** data frames. Please see [HTML reports (tinytable table)](visualize.qmd) for further visualization.
 
 ## Glance details of each module
 
-The re-enriched object from EnrichGT supports the `$` subset operator. You can use `RStudio` or `Positron`, type `$`, and then press the `Tab` key for auto-completion, as shown in the figure.
-
-In this example, all results haven't got any extra annotation. But `EnrichGT` supports Large language models (LLMs) based enrichment result annotations, you can refer to [large language models integration of EnrichGT](llm.qmd) page for more details. After performed LLM annotations, this step will display more information and insights about enrichment results.
+The re-enriched object from EnrichGT supports the `$` subset operator. You can use it to glance details inside each cluster. In morden IDE like `Positron`, type `$`, and then press the `Tab` key for auto-completion, as shown in the figure.
 
 ![](images/paste-1.png){width="700"}
+
+But when you are still using `RStudio` (which auto-complete function is poor than `ARK` LSP), you can use `names` to get the cluster names.
+
+```{r}
+names(re_enrich)
+```
+
+In this example, all results haven't got any extra annotation. But `EnrichGT` supports Large language models (LLMs) based enrichment result annotations, you can refer to [large language models integration of EnrichGT](llm.qmd) page for more details. After performed LLM annotations, this step will display more information and insights about enrichment results. If you feel typing full names is bored, you can use `c1` or `C1` and even `"1"` to access it.
 
 For example:
 
@@ -144,7 +136,41 @@ For example:
 re_enrich$Cluster_1
 ```
 
-For more details, you can can use `@` to get objects in S4. Like `result@gene_modules` returns genes in cluster.
+```{r}
+re_enrich$c3
+```
+
+```{r}
+re_enrich$"5"
+```
+
+Further more, you can can use `@` to get objects in S4. Like `result@gene_modules` returns genes in cluster.
+
+::: callout-tip
+#### How to get objects inside the S4 object?
+
+You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@tinytable_obj` returns a `gt` object.
+:::
+
+# Mask unnecessary results
+
+In transcriptomic sequencing, we often encounter a particular scenario. For example, T cell-related pathways can still be enriched in certain tumors from NOD-SCID mice, which are thymus-deficient. However, such immune infiltration patterns should not be predominant in thymus-deficient mice. Why does this happen? It’s likely due to shared immune response processes—such as interleukin and cytokine-related biological events—that are common across various immune cell types. What you’re seeing might be the surface reflection of a complex and chaotic underlying process.
+
+Clearly, neither ORA nor GSEA is capable of correcting for such biases—let alone account for rare cell types or unique tissue microenvironments. In such cases, filtering out certain pathways isn’t falsification; it’s a way to minimize potential misunderstandings for readers or collaborators.
+
+That said, I must emphasize: although this is a useful feature, please don’t use it to blindly dismiss pathways—existence implies relevance. It’s an art of trade-off. Nevertheless, every pathway with an FDR less than 0.05 deserves careful consideration.
+
+In `EnrichGT`, you can simply use `%-delete->%` operator to achieve this:
+
+``` r
+# Filter out "ribosome" related terms in re-enriched object
+filtered_results <- reenrichment_obj %-delete->% "ribosome"
+
+# Filter data.frame directly from ORA/GSEA result is also OK
+filtered_df <- df %-delete->% "metabolism"
+```
+
+It uses regular expression to help you remove them. Regular expression have many high-level ways to use, you can ask for Google for more details.
 
 # Infering TFs or pathway activity and more based on meta-gene modules
 
@@ -156,8 +182,7 @@ EnrichGT supports inferring Pathway or Transcript Factors activity from re-enric
 
 -   [CollecTRI](https://github.com/saezlab/CollecTRI) is a comprehensive resource containing a curated collection of TFs and their transcriptional targets compiled from 12 different resources. This collection provides an increased coverage of transcription factors and a superior performance in identifying perturbed TFs compared to our previous.
 
-::: {.callout-note collapse="true"}
-#### TF infering Example:
+Now let's see this example:
 
 ```{r}
 #| fig-width: 7
@@ -174,7 +199,6 @@ re_enrich_smaller_clusterNum <-
 TF_Act <- egt_infer_act(re_enrich_smaller_clusterNum,DB = "collectri", species = "human")
 egt_plot_results(TF_Act$Cluster_3)
 ```
-:::
 
 ::: callout-tip
 #### Wants to interpret the regulator of whole inputted genes?

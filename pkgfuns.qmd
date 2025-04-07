@@ -9,7 +9,7 @@ toc: true
 Type: Package
 Package: EnrichGT
 Title: EnrichGT - all in one enrichment analysis solution
-Version: 1.0.3
+Version: 1.1.4
 Author: Zhiming Ye
 Maintainer: Zhiming Ye <garnetcrow@hotmail.com>
 Description: Do biological enrichment analysis and parsing and clustering
@@ -25,27 +25,24 @@ Imports:
     dplyr,
     ellmer,
     fgsea,
-    fontawesome,
     forcats,
     ggplot2,
     glue,
     GO.db,
     grDevices,
-    gt,
     Matrix,
     methods,
-    parallel,
     proxy,
     qvalue,
     RColorBrewer,
     Rcpp,
     reactome.db,
-    rlang,
     scales,
     stats,
     stringr,
     text2vec,
     tibble,
+    tinytable,
     utils,
     xfun
 Suggests: 
@@ -127,7 +124,7 @@ If input has 3 columns, includes an additional ID column.
 gmt_file <- system.file("extdata", "h.all.v7.4.symbols.gmt", package = "EnrichGT")
 gene_sets <- database_from_gmt(gmt_file)
 
-# Read WikiPathways with ENTREZ to symbol conversion  
+# Read WikiPathways with ENTREZ to symbol conversion
 gmt_file <- "wikipathways-20220310-gmt-Homo_sapiens.gmt"
 gene_sets <- database_from_gmt(gmt_file, OrgDB = org.Hs.eg.db)
 ```
@@ -266,6 +263,30 @@ gene_lists <- list(
 )
 res <- egt_enrichment_analysis(gene_lists, database_Reactome(), multi_cores=0)
 ```
+
+# `egt_generate_quarto_report`: Export Quarto Report
+
+## Description
+
+Export Quarto Report
+
+## Usage
+
+```r
+egt_generate_quarto_report(
+  re_enrichment_results,
+  output_path = paste0(getwd(), "Report.qmd")
+)
+```
+
+## Arguments
+
+* `re_enrichment_results`: The `EnrichGT_obj`, AI summarized result is more recommanded.
+* `output_path`: Path of the output qmd file (e.g., `test.qmd`)
+
+## Value
+
+A quarto document
 
 # `egt_gsea_analysis`: Perform Gene Set Enrichment Analysis (GSEA)
 
@@ -487,6 +508,7 @@ egt_plot_results(
 * `ntop`: Show top N in each cluster. In default, for origin enriched result, showing top 15; for re-clustered object, showing top 5 in each cluster.
 * `showIDs`: bool, show pathway IDs or not. Default is FALSE
 * `max_len_descript`: the label format length, default as 40.
+* `keepAll`: Do filtering to avoid overlap of same genes or not
 * `...`: Other param
 * `P.adj`: If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
 * `low.col`: the color for the lowest
@@ -528,7 +550,7 @@ egt_recluster_analysis(
 * `force`: Logical to bypass validation checks (default: FALSE).
 * `nTop`: Number of top terms to keep per cluster by p-value (default: 10).
 * `method`: Hierarchical clustering method (default: "ward.D2"). One of:
-"ward.D", "ward.D2", "single", "complete", "average" (UPGMA), 
+"ward.D", "ward.D2", "single", "complete", "average" (UPGMA),
 "mcquitty" (WPGMA), "median" (WPGMC), or "centroid" (UPGMC).
 * `...`: Additional arguments passed to clustering functions.
 
@@ -536,9 +558,9 @@ egt_recluster_analysis(
 
 Input requirements by analysis type:
 ORA results:
-  Required columns: "ID", "Description", "GeneRatio", "pvalue", 
+  Required columns: "ID", "Description", "GeneRatio", "pvalue",
   "p.adjust", "geneID", "Count"
-GSEA results:  
+GSEA results:
   Required columns: "ID", "Description", "NES", "pvalue",
   "p.adjust", "core_enrichment"
 compareClusterResult:
@@ -557,7 +579,7 @@ Zhiming Ye
 An `EnrichGT_obj` containing:
 
 * enriched_result: Filtered results data frame
-* gt_object: Formatted `gt` table object
+* tinytable_obj: Formatted `tinytable` table object
 * gene_modules: List of gene modules per cluster
 * pathway_clusters: Pathway names by cluster
 * clustering_tree: `hclust` object for visualization
@@ -570,9 +592,9 @@ An `EnrichGT_obj` containing:
 res <- egt_recluster_analysis(ora_result, ClusterNum=8)
 plot(res@clustering_tree)
 
-# GSEA example 
+# GSEA example
 gsea_res <- egt_recluster_analysis(gsea_result, method="average")
-gtsave(gsea_res@gt_object, "results.html")
+gsea_res
 ```
 
 # `genes_with_weights`: Create a ranked gene list for GSEA analysis
@@ -600,15 +622,15 @@ Zhiming Ye
 ## Value
 
 A named numeric vector sorted in descending order by weight, where:
-  - Names are gene identifiers  
+  - Names are gene identifiers
   - Values are the corresponding weights
 
 ## Examples
 
 ```r
-# Example using differential expression results  
+# Example using differential expression results
 genes <- c("TP53", "BRCA1", "EGFR")
-log2fc <- c(1.5, -2.1, 0.8) 
+log2fc <- c(1.5, -2.1, 0.8)
 ranked_genes <- genes_with_weights(genes, log2fc)
 ```
 
@@ -672,6 +694,10 @@ database_KEGG_show_organism()
 * `OrgDB`: The AnnotationDbi database to convert KEGG gene ID to gene symbols. For human it would be `org.Hs.eg.db`, for mouse it would be `org.Mm.eg.db`. In AnnotationDbi there are many species, please search `AnnotationDbi` for other species annotation database.
 * `kegg_modules`: If TRUE, returns KEGG module; If FALSE returns KEGG pathways. In default, this is setted to FALSE to get mouse commonly used KEGG pathways.
 * `local_cache`: cache a copy in local working folder. It will be saved as a `.enrichgt_cache` file in working dictionary. The `.enrichgt_cache` is just a `.rds` file, feel free to read it using `readRDS()`.
+
+## Value
+
+data.frame contains KEGG annotations
 
 # `%-delete->%`: Filter Enrichment Results by Description Pattern
 

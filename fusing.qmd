@@ -36,17 +36,23 @@ Of note, all enriched objects in the same list should from **the same** gene sou
 
 Example:
 
-``` r
-res1 <- egt_enrichment_analysis(genes = DEGtable$Genes,
+``` {r}
+#| fig-height: 13
+#| fig-width: 7
+data("DEGexample")
+DEGtable <- DEGexample |> dplyr::filter(padj < 0.05, abs(log2FoldChange) > 1)
+res1 <- egt_enrichment_analysis(genes = DEGtable$...1,
 database = database_GO_BP(org.Hs.eg.db))
 
-res2 <- egt_enrichment_analysis(genes = DEGtable$Genes,
+res2 <- egt_enrichment_analysis(genes = DEGtable$...1,
 database = database_Reactome(org.Hs.eg.db))
 
 Fused_enrich <- egt_recluster_analysis(list(res1,res2))
+
+egt_plot_results(Fused_enrich, showIDs = T) # <1>
 ```
 
-After this, you can generate HTML tables to view the fused result (See the [HTML reports (gt table)](visualize.qmd)).
+1. See the [HTML reports and visualize guide](visualize.qmd) for more visualize method (especially the HTML table!)
 
 # Reversed gene sources analyzed by same database
 

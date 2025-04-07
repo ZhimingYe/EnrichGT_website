@@ -69,7 +69,7 @@ Then we start ORA:
 
 ```{r}
 ora_result <- egt_enrichment_analysis(genes = DEGexample_UpReg$...1,database = database_GO_BP(org.Hs.eg.db))
-ora_result |> as_tibble() # You don't need to call as_tibble, this is just for better printing
+ora_result
 ```
 
 ::: callout-tip
@@ -123,7 +123,7 @@ resGSEA <- egt_gsea_analysis(genes =
                                               weights = DEGexample$log2FoldChange),
                          database = database_GO_BP(org.Hs.eg.db)
                          )
-resGSEA |> as_tibble() # You don't need to call as_tibble, this is just for better printing
+resGSEA
 ```
 
 Other kind of weights, like the loading from PCA or NMF, or the importance of random forest, can be also used.

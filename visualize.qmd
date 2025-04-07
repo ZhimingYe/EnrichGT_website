@@ -27,27 +27,33 @@ resGSEA<-readRDS("resGSEA.rds")
 re_enrich<-readRDS("re_enrich.rds")
 ```
 
-# HTML reports (gt table) {#html-reports-gt-table}
+# HTML reports {#html-reports-gt-table}
 
-Because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `gt` HTML tables. This only supports the re-enriched results.
+## Inline or in dynamic documents
 
-You can simple input the object name of re-enriched object or fused object, to show the table.
+Because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `tinytable` HTML tables. This only supports the re-enriched results.
 
-![](enrichGTTable.jpg)
+You can simple print by input the object name of re-enriched object or fused object to R console, to show the table. In IDE like `RStudio` and `Positron`, you can view the table in `View` window. You can also integrate to R-based publish systems like `rmarkdown`, `Quarto` or `litedown`. Like this: The default setting is optimized for HTML reports. For Latex reports, you may refer to the document of `tinytable`.
 
-This just shows the second slot inside the `EnrichGT_obj` object. The second slot - `gt_object` is a pure object of `gt` package, you can use any [function](https://gt.rstudio.com/reference/index.html) on it, like:
-
-``` r
-re_enrichment_results@gt_object |> gt_save("test.html") # Save it use basic gt functions. 
+```{r, eval = knitr::is_html_output()}
+re_enrich
 ```
 
-For further usage of gt package, please refer to <https://gt.rstudio.com/articles/gt.html>.
+This just shows the second slot inside the `EnrichGT_obj` object. The second slot - `tinytable_obj` is a pure object of `tinytable` package, you can use any [function](https://vincentarelbundock.github.io/tinytable/vignettes/tinytable.html) on it.
+
+For further usage of `tinytable` package, please refer to <https://vincentarelbundock.github.io/tinytable/vignettes/tinytable.html>.
 
 See re-enrichment example for further demo.
 
+## Quarto full-report
+
+Function `egt_generate_quarto_report()` can help you convert re-enrichment object to an all-in-one Quarto document containing all enrichment results. You can use `RStudio` or `Positron` to knit them (preview) into HTML document.
+
+![](images/paste-3.png)
+
 # Ploting functions
 
-HTML `gt` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
+HTML `tinytable` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
 
 ## Basic result plot
 
@@ -88,35 +94,34 @@ egt_plot_results(re_enrich)
 
 ## Additional GSEA plots
 
-Since version 0.8.6, EnrichGT provides a function called `egt_plot_gsea()` to help users to get typical ranking plots. If you pass a pathway name to the first param of this function, `egt_plot_gsea()` will return a ranking plot of single pathway. For multiple pathway, you need to subset the `data.frame` result of `egt_gsea_analysis()`. 
+Since version 0.8.6, EnrichGT provides a function called `egt_plot_gsea()` to help users to get typical ranking plots. If you pass a pathway name to the first param of this function, `egt_plot_gsea()` will return a ranking plot of single pathway. For multiple pathway, you need to subset the `data.frame` result of `egt_gsea_analysis()`.
 
-The param contains: 
+The param contains:
 
-* `x`: A GSEA result object. Can be either:
-  * A data frame containing GSEA results (requires columns: pvalue, p.adjust, Description)
-  * A character string specifying a single pathway name
-* `genes` and `database` should be the same as you doing `egt_gsea_analysis()`
+-   `x`: A GSEA result object. Can be either:
+    -   A data frame containing GSEA results (requires columns: pvalue, p.adjust, Description)
+    -   A character string specifying a single pathway name
+-   `genes` and `database` should be the same as you doing `egt_gsea_analysis()`
 
-::: {.callout-note}
-#### Why multiple results need a `data.frame`
+::: callout-note
+#### Why multiple results plotting function needs a `data.frame`
 
-You can see the result figure, we need the `NES` and `p-values` for display. 
-
+You can see the result figure, we need the `NES` and `p-values` for display.
 :::
 
 ### Single ranking plot
 
-You need to prepare your favourite pathway's name: 
+You need to prepare your favourite pathway's name:
 
 ```{r}
 class(resGSEA$Description[1])# <1>
 resGSEA$Description[1] # <2>
 ```
 
-1. This is a vector. 
-2. If you need the single-plot, all you pass to `egt_plot_gsea()` is the name of this pathway, subset from `resGSEA`. 
+1.  This is a vector.
+2.  If you need the single-plot, all you pass to `egt_plot_gsea()` is the name of this pathway, subset from `resGSEA`.
 
-And then using `egt_plot_gsea()` for drawing. The other params should be the **same** as you provided in origin GSEA analysis. 
+And then using `egt_plot_gsea()` for drawing. The other params should be the **same** as you provided in origin GSEA analysis.
 
 ```{r}
 egt_plot_gsea(resGSEA$Description[1],
@@ -125,27 +130,23 @@ egt_plot_gsea(resGSEA$Description[1],
               database = database_GO_BP(org.Hs.eg.db))
 ```
 
-
-
 ### Table-like visualization GSEA result
 
-:::{.callout-warning}
-
-If you want to plot this plot, remember to filter the GSEA results to ~10 to ~20, you can base on `NES` or `p-values`. This is to avoid too many loading to this plotting. 
-
+::: callout-warning
+If you want to plot this plot, remember to filter the GSEA results to \~10 to \~20, you can base on `NES` or `p-values`. This is to avoid too many loading to this plotting.
 :::
 
-You need to subset the origin GSEA result `data.frame` according to `NES` or `p-val` to gain your targets. In this demo, we choose row 1 to row 8.  
+You need to subset the origin GSEA result `data.frame` according to `NES` or `p-val` to gain your targets. In this demo, we choose row 1 to row 8.
 
 ```{r}
 class(resGSEA[1:8,]) # <1>
 resGSEA[1:8,] # <2>
 ```
 
-1. This is a `data.frame`. Please subset it to avoid too many results and the waste of time. 
-2. You need to subset data frame according to NES (suggests: `abs(NES)>1`) and p-value, too avoiding too many outputs and wasting. 
+1.  This is a `data.frame`. Please subset it to avoid too many results and the waste of time.
+2.  You need to subset data frame according to NES (suggests: `abs(NES)>1`) and p-value, too avoiding too many outputs and wasting.
 
-And then using `egt_plot_gsea()` for drawing. The other params should be the **same** as you provided in origin GSEA analysis. 
+And then using `egt_plot_gsea()` for drawing. The other params should be the **same** as you provided in origin GSEA analysis.
 
 ```{r}
 egt_plot_gsea(resGSEA[1:8,], 
@@ -154,14 +155,13 @@ egt_plot_gsea(resGSEA[1:8,],
               database = database_GO_BP(org.Hs.eg.db))
 ```
 
-
 ## UMAP plot for re-enrichment (no longer supported)
 
 Before version 0.8.6, UMAP plot is provided in re-enriched `egt_object`, to show the dimensionality reduction view of enriched results.
 
-A word frequency matrix represents the frequency of words or tokens across different documents or text samples. Each row corresponds to a document, and each column represents a word or token, with the cell values indicating the frequency of the respective word in that document.However, high-dimensional data like word frequency matrices can be challenging to interpret directly. To make such data easier to analyze, we can reduce its dimensionality and visualize the patterns or clusters in a 2D or 3D space. UMAP (Uniform Manifold Approximation and Projection) is a powerful, non-linear dimensionality reduction technique widely used for this purpose. 
+A word frequency matrix represents the frequency of words or tokens across different documents or text samples. Each row corresponds to a document, and each column represents a word or token, with the cell values indicating the frequency of the respective word in that document.However, high-dimensional data like word frequency matrices can be challenging to interpret directly. To make such data easier to analyze, we can reduce its dimensionality and visualize the patterns or clusters in a 2D or 3D space. UMAP (Uniform Manifold Approximation and Projection) is a powerful, non-linear dimensionality reduction technique widely used for this purpose.
 
-But since 0.8.6, because `umap` and `ggrepel` have too many dependencies, and this function is not nesessary in most of cases. We now don't support it. If you still needs this figure, you can execute following code. 
+But since 0.8.6, because `umap` and `ggrepel` have too many dependencies, and this function is not nesessary in most of cases. We now don't support it. If you still needs this figure, you can execute following code.
 
 ``` r
 library(umap)
