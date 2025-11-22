@@ -65,7 +65,7 @@ re_enrichment_results |> egt_infer_act(DB = "collectri", species = "human") # <5
 4. Viewing re-enrichment result as UMAP plot, see more in [visualization help](visualize.qmd); 
 5. Infering TF/pathway activity, experimential, might not be correct, see more in [re-enrichment help](re_enrichment.qmd). 
 
-# AI-based annotations
+# LLM-based annotations
 
 See more in [large language models integration](llm.qmd)
 
@@ -74,11 +74,15 @@ library(ellmer)
 dsAPI <- "sk-**********" 
 chat <- chat_deepseek(api_key = dsAPI, model = "deepseek-chat", system_prompt = "") # <1>
 re_enrichment_results <- egt_llm_summary(re_enrichment_results, chat)
-re_enrichment_results$Cluster_1 # <2>
+egt_summary(re_enrichment_results, 1) # <2>
+summary_with_knowledge <- egt_llm_summary(re_enrich, chat, background_knowledges = paste(readLines("paperReference.txt"), collapse = " ")) # <3>
+LLMcompare <- egt_llm_multi_summary(re_enrich, chat_list = list(`deepseek-v3.2-exp` = deepseekAI, `qwen3-max` = QwenAI), background_knowledges = paste(readLines("paperReference.txt"), collapse = " ")) # <4>
 ```
 
 1. In this step we create a DeepSeek interface. We use `ellmer` for LLM support. For details please refer to [ellmer tidyverse website](https://ellmer.tidyverse.org/index.html). It provides a uniform interface for most of LLMs in R.
-2. Display annotation by LLM.  
+2. Display annotation by LLM of `cluster 1`.  
+3. You can use `background_knowledges` to add background knowledge for LLMs to refer (e.g, papers, your opinions ...). 
+4. EnrichGT enable multi-LLM annotation results comparasion. 
 
 # GSEA
 
@@ -100,6 +104,7 @@ egt_plot_gsea(GSEAexample$Description[1:10,], # <5>
               genes = genes_with_weights(genes = DEGexample2$...1, 
                                               weights = DEGexample2$log2FoldChange),
               database = database_GO_BP(org.Hs.eg.db)) # <6>
+re_enrichment_results <- egt_recluster_analysis(GSEAexample) # <7>
 ```
 1. GSEA is also supported, see [enrichment details](enrichment_core.qmd). `genes_with_weights()` is used to generate weighted genes; 
 2. Additional pathway information like GMT file or table is also supported. See [Database usage](database.qmd). 
@@ -107,8 +112,9 @@ egt_plot_gsea(GSEAexample$Description[1:10,], # <5>
 4. Single ranking plot, see more in [visualization help](visualize.qmd); 
 5. Please subset it to avoid too many results and the waste of time; 
 6. Showing table-like result in figure, see more in [visualization help](visualize.qmd). 
+7. GSEA also supported in re-cluster analysis. 
 
-# Fusing ORA results
+# Fusing results
 
 This function support the ORA output from both `EnrichGT` and `clusterProfiler`. So you can use your favourite tool to achieve this. 
 

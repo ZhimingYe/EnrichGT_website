@@ -41,36 +41,9 @@ Print `?egt_recluster_analysis` for further help. But of note, you can adjust `C
 
 Gene enrichment analysis can often be misleading due to the redundancy within gene set databases and the limitations of most enrichment tools. Many tools, by default, only display a few top results and fail to filter out redundancy. This can result in both biological misinterpretation and valuable information being overlooked.
 
-For instance, high expression of certain immune genes can cause many immune-related gene sets to appear overrepresented. However, a closer look often reveals that these gene sets are derived from the same group of genes, which might represent only a small fraction (less than 10%) of the differentially expressed genes (DEGs). What about the other 90%? Do they hold no biological significance?
+For instance, high expression of certain immune genes can cause many immune-related gene sets to appear overrepresented. However, a closer look often reveals that these gene sets are derived from the same group of genes, which might represent only a small fraction (less than 10%) of the differential expressed genes (DEGs). What about the other 90%? Do they hold no biological significance?
 
-##### Current Solutions
-
-**clusterProfiler** is one of the most powerful tools in R for enrichment analysis. It's designed with pathway redundancy in mind and includes the `clusterProfiler::simplify` function to address this issue. This method, based on **GOSemSim** for GO similarity evaluation, is scientifically robust and highly effective.
-
-However, there are some drawbacks:
-
--   GOSemSim is not fast, particularly when dealing with large or complex gene sets.
-
--   It doesn't support databases like KEGG or Reactome.
-
-Using GOSemSim to measure the semantic similarity between pathways is, theoretically, the best way to tackle redundancy. However, in practical cases—especially in experimental bioinformatics validation—researchers are more focused on the genes behind these pathways rather than the pathways themselves.
-
-##### Alternative Approaches
-
-Although clustering pathways based on gene overlap has received some criticism, it remains a viable approach in many situations. For this reason, I developed **BioThemeFinder** a few years ago to solve this problem. However, the tool is so awful (I am poor in coding...)
-
-Today, two excellent alternatives exist:
-
--   **simplifyEnrichment**: This package is more scientifically rigorous (based on semantic similarity) and creates beautiful visualizations. It also doesn't support databases like KEGG or Reactome.
--   **aPEAR**: A simpler and faster tool that better aligns with practical needs, making it my preferred choice.
-
-However, both of these tools have a common limitation: their visualizations are optimized for publication purposes rather than for exploratory research. I often find myself exporting CSV files or struggling with RStudio's preview pane to fully explore enrichment tables. This inspired me to develop a more efficient solution. Also, they are slow.
-
-##### Goals of This Package
-
-The main purpose of developing this package is to provide a **lightweight and practical solution** to the problems mentioned above. Specifically, this package aims to:
-
-**Cluster enrichment results** based on hit genes or core enrichment from GSEA using term frequency analysis (from the output of the powerful `clusterProfiler`). This provides a clearer view of biological relevance by focusing on the genes that matter most.
+The main purpose of developing this package is to provide a lightweight and practical solution to the problems mentioned above. Specifically, this package can cluster enrichment results based on hit genes or core enrichment from GSEA using term frequency analysis (from the output of the powerful `clusterProfiler`). This provides a clearer view of biological relevance by focusing on the genes that matter most.
 :::
 
 ``` r
@@ -114,9 +87,33 @@ re_enrich@enriched_result # Get the re-enrichment result table
 
 ## Access re-enriched HTML report
 
-EnrichGT offers **more than** data frames. Please see [HTML reports (tinytable table)](visualize.qmd) for further visualization.
+EnrichGT offers **more than** data frames. Please see [HTML reports (gt table table)](visualize.qmd) for further visualization.
 
 ## Glance details of each module
+
+### Through Word Cloud
+
+`egt_fetch_biological_theme` function can do this. Just execute:
+
+```{r}
+egt_fetch_biological_theme(re_enrich, 1)
+```
+
+### Through Morden IDEs
+
+EnrichGT works well with IDEs `RStudio` and `Positron`. You can use `egt_summary()` function to see the LLM summaries.
+
+For example, if you want to view `cluster 1`, you can use one of below:
+
+``` r
+egt_summary(deepseekAnno, "1")
+egt_summary(deepseekAnno, 1)
+egt_summary(deepseekAnno, "Cluster_1")
+```
+
+![](images/clipboard-657879404.png){width="800"}
+
+### Through R Console
 
 The re-enriched object from EnrichGT supports the `$` subset operator. You can use it to glance details inside each cluster. In morden IDE like `Positron`, type `$`, and then press the `Tab` key for auto-completion, as shown in the figure.
 
@@ -149,7 +146,7 @@ Further more, you can can use `@` to get objects in S4. Like `result@gene_module
 ::: callout-tip
 #### How to get objects inside the S4 object?
 
-You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@tinytable_obj` returns a `gt` object.
+You can use `@`, for example, `x <- re_enrich@enriched_result` returns a result table and `x <- re_enrich@gt_object` returns a `gt` object.
 :::
 
 # Mask unnecessary results
@@ -172,6 +169,15 @@ filtered_df <- df %-delete->% "metabolism"
 
 It uses regular expression to help you remove them. Regular expression have many high-level ways to use, you can ask for Google for more details.
 
+# Manual visualize the relationship of specific terms intra database
+
+`egt_fetch_termwise_relationship` is designed for this. This directly call the cluster function internal and show you the result. The purpose of designing this function is to encourage you to explore more freely.
+
+```{r}
+library(org.Hs.eg.db)
+egt_fetch_termwise_relationship(ora_result$Description[1:100],database = database_GO_BP(org.Hs.eg.db),ClusterNum = 5)
+```
+
 # Infering TFs or pathway activity and more based on meta-gene modules
 
 Based on re-enriched result, the S4 object return from re-enrichment contains `gene_modules` slot and `pathway_clusters` slot. In `gene_modules` slot you can find a group of meta-genes take part in specific pathway cluster (in `pathway_clusters` slot).
@@ -187,17 +193,9 @@ Now let's see this example:
 ```{r}
 #| fig-width: 7
 #| fig-height: 7
-re_enrich_smaller_clusterNum <- 
-  egt_recluster_analysis(
-  ora_result,
-  ClusterNum = 6, # reduce the cluster nums. 
-  P.adj = 0.05,
-  force = F,
-  nTop = 10,
-  method = "ward.D2"
-)
-TF_Act <- egt_infer_act(re_enrich_smaller_clusterNum,DB = "collectri", species = "human")
-egt_plot_results(TF_Act$Cluster_3)
+
+TF_Act <- egt_infer_act(re_enrich,DB = "collectri", species = "human")
+egt_plot_results(TF_Act$Cluster_1,P.adj = 0.1)
 ```
 
 ::: callout-tip

@@ -9,53 +9,652 @@ toc: true
 Type: Package
 Package: EnrichGT
 Title: EnrichGT - all in one enrichment analysis solution
-Version: 1.1.4
-Author: Zhiming Ye
-Maintainer: Zhiming Ye <garnetcrow@hotmail.com>
+Version: 2.2.0
+Authors@R: c(
+    person("Zhiming", "Ye", , "garnetcrow@hotmail.com", role = c("aut", "cre")),
+    person("Runchen", "Wang", , "runchen_wang@163.com", role = "cph")
+  )
 Description: Do biological enrichment analysis and parsing and clustering
     enrichment result to insightful results in just ONE package
 License: GPL-V3
 URL: https://zhimingye.github.io/EnrichGT/
 Depends: 
-    R (>= 2.10)
+    R (>= 4.1.0)
 Imports: 
     AnnotationDbi,
-    BiocManager,
     cli,
     dplyr,
     ellmer,
     fgsea,
+    fontawesome,
     forcats,
+    ggdendro,
     ggplot2,
+    ggwordcloud,
     glue,
     GO.db,
+    graphics,
     grDevices,
+    gt,
+    htmltools,
     Matrix,
     methods,
     proxy,
     qvalue,
+    R6,
     RColorBrewer,
     Rcpp,
     reactome.db,
+    rlang,
     scales,
     stats,
     stringr,
     text2vec,
     tibble,
-    tinytable,
     utils,
     xfun
 Suggests: 
-    devtools,
+    BiocManager,
     readr,
-    testthat (>= 3.0.0),
-    tidyverse
+    testthat (>= 3.0.0)
 LinkingTo: 
     Rcpp
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
+```
+
+# `comparison_reactor_base`: Comparison Reactor Base
+
+## Description
+
+Typically created via `[egt_comparison_reactor](egt_comparison_reactor)()`A framework for comparing and analyzing enrichment results across multiple groups.
+This is the base class that provides core functionality for both ORA and GSEA analysis.
+
+## Details
+
+The comparison reactor allows:
+- Appending multiple enrichment results from different groups
+- Filtering results by p-value or NES score
+- Comparing results between groups
+- Identifying relationships between enriched terms
+- Visualizing biological themes
+- Sub-clustering results for deeper analysis
+
+## Methods
+
+### Public methods
+
+* [`comparison_reactor_base$new()`](#method-comparison_reactor_base-new)
+* [`comparison_reactor_base$append_enriched_result()`](#method-comparison_reactor_base-append_enriched_result)
+* [`comparison_reactor_base$summarize()`](#method-comparison_reactor_base-summarize)
+* [`comparison_reactor_base$prefilter_by_p_adj()`](#method-comparison_reactor_base-prefilter_by_p_adj)
+* [`comparison_reactor_base$find_relationship()`](#method-comparison_reactor_base-find_relationship)
+* [`comparison_reactor_base$fetch_relationship()`](#method-comparison_reactor_base-fetch_relationship)
+* [`comparison_reactor_base$fetch_biological_theme()`](#method-comparison_reactor_base-fetch_biological_theme)
+* [`comparison_reactor_base$split_by_cluster()`](#method-comparison_reactor_base-split_by_cluster)
+* [`comparison_reactor_base$get_splited_list()`](#method-comparison_reactor_base-get_splited_list)
+* [`comparison_reactor_base$do_recluster()`](#method-comparison_reactor_base-do_recluster)
+* [`comparison_reactor_base$get_recluster_result()`](#method-comparison_reactor_base-get_recluster_result)
+* [`comparison_reactor_base$print()`](#method-comparison_reactor_base-print)
+* [`comparison_reactor_base$clone()`](#method-comparison_reactor_base-clone)
+
+### Method `new()`
+
+Create a new comparison reactor base object
+
+#### Usage
+
+```
+comparison_reactor_base$new(Type = NULL)
+```
+
+#### Arguments
+
+* `Type`: The analysis type ("ORA" or "GSEA")
+
+### Method `append_enriched_result()`
+
+Add enrichment results to the reactor
+
+#### Usage
+
+```
+comparison_reactor_base$append_enriched_result(x, group)
+```
+
+#### Arguments
+
+* `x`: Data.frame of enrichment results (must contain p-value/adjusted p-value columns)
+* `group`: Character string naming the group for these results
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+reactor <- egt_comparison_reactor("ORA")
+reactor$append_enriched_result(ora_result1, "group1")
+}
+```
+
+### Method `summarize()`
+
+Print summary of groups in reactor
+
+#### Usage
+
+```
+comparison_reactor_base$summarize()
+```
+
+### Method `prefilter_by_p_adj()`
+
+Filter enrichment results by adjusted p-value cutoff
+
+#### Usage
+
+```
+comparison_reactor_base$prefilter_by_p_adj(x = 0.05)
+```
+
+#### Arguments
+
+* `x`: Numeric cutoff for adjusted p-values (default 0.05)
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+reactor$prefilter_by_p_adj(0.01) # Use stricter cutoff
+}
+```
+
+### Method `find_relationship()`
+
+Identify relationships between enriched terms across groups
+
+#### Usage
+
+```
+comparison_reactor_base$find_relationship(
+  Num = NULL,
+  dist_method = "euclidean",
+  hclust_method = "ward.D2",
+  ...
+)
+```
+
+#### Arguments
+
+* `Num`: Number of top terms to consider from each group
+* `dist_method`: Distance method for clustering (default "euclidean")
+* `hclust_method`: Hierarchical clustering method (default "ward.D2")
+* `...`: Additional parameters passed to heatmap function
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+reactor$find_relationship(Num = 5, dist_method = "manhattan")
+}
+```
+
+### Method `fetch_relationship()`
+
+Retrieve relationship data between terms
+
+#### Usage
+
+```
+comparison_reactor_base$fetch_relationship()
+```
+
+#### Returns
+
+Data.frame containing term relationships and cluster assignments
+
+#### Examples
+
+```
+\dontrun{
+relation_df <- reactor$fetch_relationship()
+head(relation_df)
+}
+```
+
+### Method `fetch_biological_theme()`
+
+Generate wordcloud visualization of biological themes
+
+#### Usage
+
+```
+comparison_reactor_base$fetch_biological_theme(...)
+```
+
+#### Arguments
+
+* `...`: Additional parameters passed to wordcloud generator
+
+#### Returns
+
+List containing ggplot2 wordcloud objects
+
+#### Examples
+
+```
+\dontrun{
+wordclouds <- reactor$fetch_biological_theme()
+wordclouds[[1]] # View first wordcloud
+}
+```
+
+### Method `split_by_cluster()`
+
+Split results by identified clusters for further analysis
+
+#### Usage
+
+```
+comparison_reactor_base$split_by_cluster(...)
+```
+
+#### Arguments
+
+* `...`: Additional parameters
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+### Method `get_splited_list()`
+
+Get list of results split by cluster
+
+#### Usage
+
+```
+comparison_reactor_base$get_splited_list()
+```
+
+#### Returns
+
+List of data frames split by cluster
+
+### Method `do_recluster()`
+
+Perform sub-clustering within existing clusters
+
+#### Usage
+
+```
+comparison_reactor_base$do_recluster(
+  ClusterNum = 10,
+  P.adj = 0.05,
+  force = F,
+  nTop = 10,
+  method = "ward.D2",
+  ...
+)
+```
+
+#### Arguments
+
+* `ClusterNum`: Number of sub-clusters to generate
+* `P.adj`: Adjusted p-value cutoff (default 0.05)
+* `force`: Whether to force reclustering (default FALSE)
+* `nTop`: Number of top terms to consider (default 10)
+* `method`: Clustering method (default "ward.D2")
+* `...`: Additional parameters passed to clustering functions
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+reactor$do_recluster(ClusterNum = 5, method = "complete")
+}
+```
+
+### Method `get_recluster_result()`
+
+Retrieve sub-clustering results
+
+#### Usage
+
+```
+comparison_reactor_base$get_recluster_result()
+```
+
+#### Returns
+
+List containing reclustering results
+
+#### Examples
+
+```
+\dontrun{
+recluster_results <- reactor$get_recluster_result()
+names(recluster_results)
+}
+```
+
+### Method `print()`
+
+#### Usage
+
+```
+comparison_reactor_base$print(...)
+```
+
+### Method `clone()`
+
+The objects of this class are cloneable with this method.
+
+#### Usage
+
+```
+comparison_reactor_base$clone(deep = FALSE)
+```
+
+#### Arguments
+
+* `deep`: Whether to make a deep clone.
+
+## Examples
+
+```r
+## ------------------------------------------------
+## Method `comparison_reactor_base$append_enriched_result`
+## ------------------------------------------------
+
+
+reactor <- egt_comparison_reactor("ORA")
+reactor$append_enriched_result(ora_result1, "group1")
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_base$prefilter_by_p_adj`
+## ------------------------------------------------
+
+
+reactor$prefilter_by_p_adj(0.01) # Use stricter cutoff
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_base$find_relationship`
+## ------------------------------------------------
+
+
+reactor$find_relationship(Num = 5, dist_method = "manhattan")
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_base$fetch_relationship`
+## ------------------------------------------------
+
+
+relation_df <- reactor$fetch_relationship()
+head(relation_df)
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_base$fetch_biological_theme`
+## ------------------------------------------------
+
+
+wordclouds <- reactor$fetch_biological_theme()
+wordclouds[[1]] # View first wordcloud
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_base$do_recluster`
+## ------------------------------------------------
+
+
+reactor$do_recluster(ClusterNum = 5, method = "complete")
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_base$get_recluster_result`
+## ------------------------------------------------
+
+
+recluster_results <- reactor$get_recluster_result()
+names(recluster_results)
+```
+
+# `comparison_reactor_gsea`: GSEA Comparison Reactor
+
+## Description
+
+Typically created via `[egt_comparison_reactor](egt_comparison_reactor)("GSEA")`
+
+## Details
+
+This reactor is optimized for comparing GSEA results across multiple groups,
+with methods tailored for NES (Normalized Enrichment Score) based comparisons.
+
+## Super class
+
+`[EnrichGT::comparison_reactor_base](https://rdrr.io/pkg/EnrichGT/man/comparison_reactor_base.html)` -> `comparison_reactor_gsea`
+
+## Methods
+
+### Public methods
+
+* [`comparison_reactor_gsea$new()`](#method-comparison_reactor_gsea-new)
+* [`comparison_reactor_gsea$make_plans()`](#method-comparison_reactor_gsea-make_plans)
+* [`comparison_reactor_gsea$prefilter_by_NES()`](#method-comparison_reactor_gsea-prefilter_by_NES)
+* [`comparison_reactor_gsea$clone()`](#method-comparison_reactor_gsea-clone)
+
+### Method `new()`
+
+Create a new GSEA comparison reactor
+
+#### Usage
+
+```
+comparison_reactor_gsea$new()
+```
+
+### Method `make_plans()`
+
+Create comparison plans between specified GSEA groups
+
+#### Usage
+
+```
+comparison_reactor_gsea$make_plans(group = "auto", use_value = "NES")
+```
+
+#### Arguments
+
+* `group`: Character vector of group names to compare or "auto" for all groups
+* `use_value`: Which value to use for comparison ("NES" for normalized enrichment score)
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+gsea_reactor$make_plans(group = c("group1", "group2"))
+}
+```
+
+### Method `prefilter_by_NES()`
+
+Filter GSEA results by normalized enrichment score cutoff
+
+#### Usage
+
+```
+comparison_reactor_gsea$prefilter_by_NES(x = 1)
+```
+
+#### Arguments
+
+* `x`: Numeric cutoff for absolute NES values (default 1)
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+gsea_reactor$prefilter_by_NES(1.5) # Filter for stronger effects
+}
+```
+
+### Method `clone()`
+
+The objects of this class are cloneable with this method.
+
+#### Usage
+
+```
+comparison_reactor_gsea$clone(deep = FALSE)
+```
+
+#### Arguments
+
+* `deep`: Whether to make a deep clone.
+
+## Seealso
+
+`[comparison_reactor_base](comparison_reactor_base)` for inherited methods
+A specialized reactor for comparing Gene Set Enrichment Analysis (GSEA) results.
+Inherits from comparison_reactor_base and provides GSEA-specific functionality.
+
+## Examples
+
+```r
+## ------------------------------------------------
+## Method `comparison_reactor_gsea$make_plans`
+## ------------------------------------------------
+
+
+gsea_reactor$make_plans(group = c("group1", "group2"))
+
+
+## ------------------------------------------------
+## Method `comparison_reactor_gsea$prefilter_by_NES`
+## ------------------------------------------------
+
+
+gsea_reactor$prefilter_by_NES(1.5) # Filter for stronger effects
+```
+
+# `comparison_reactor_ora`: ORA Comparison Reactor
+
+## Description
+
+Typically created via `[egt_comparison_reactor](egt_comparison_reactor)("ORA")`
+
+## Details
+
+This reactor is optimized for comparing ORA results across multiple groups,
+with methods tailored for p-value based comparisons.
+
+## Super class
+
+`[EnrichGT::comparison_reactor_base](https://rdrr.io/pkg/EnrichGT/man/comparison_reactor_base.html)` -> `comparison_reactor_ora`
+
+## Methods
+
+### Public methods
+
+* [`comparison_reactor_ora$new()`](#method-comparison_reactor_ora-new)
+* [`comparison_reactor_ora$make_plans()`](#method-comparison_reactor_ora-make_plans)
+* [`comparison_reactor_ora$clone()`](#method-comparison_reactor_ora-clone)
+
+### Method `new()`
+
+Create a new ORA comparison reactor
+
+#### Usage
+
+```
+comparison_reactor_ora$new()
+```
+
+### Method `make_plans()`
+
+Create comparison plans between specified ORA groups
+
+#### Usage
+
+```
+comparison_reactor_ora$make_plans(group = "auto", use_value = "p")
+```
+
+#### Arguments
+
+* `group`: Character vector of group names to compare or "auto" for all groups
+* `use_value`: Which value to use for comparison ("p" for p-value or "padj" for adjusted p-value)
+
+#### Returns
+
+The reactor object (invisible) for method chaining
+
+#### Examples
+
+```
+\dontrun{
+ora_reactor$make_plans(group = c("group1", "group2"), use_value = "padj")
+}
+```
+
+### Method `clone()`
+
+The objects of this class are cloneable with this method.
+
+#### Usage
+
+```
+comparison_reactor_ora$clone(deep = FALSE)
+```
+
+#### Arguments
+
+* `deep`: Whether to make a deep clone.
+
+## Seealso
+
+`[comparison_reactor_base](comparison_reactor_base)` for inherited methods
+A specialized reactor for comparing Over-Representation Analysis (ORA) results.
+Inherits from comparison_reactor_base and provides ORA-specific functionality.
+
+## Examples
+
+```r
+## ------------------------------------------------
+## Method `comparison_reactor_ora$make_plans`
+## ------------------------------------------------
+
+
+ora_reactor$make_plans(group = c("group1", "group2"), use_value = "padj")
 ```
 
 # `convert_annotations_genes`: Convert gene annotations from any keys to any keys
@@ -180,6 +779,53 @@ Zhiming Ye
 `List` containing multiple `EnrichGT_obj` objects.
 The `List` contains objects with overlapped enriched terms, unique enrich terms.
 
+# `egt_comparison_reactor`: Framework for comparing and analyzing enrichment results
+across multiple groups
+
+## Description
+
+Framework for comparing and analyzing enrichment results
+across multiple groups
+
+## Usage
+
+```r
+egt_comparison_reactor(Type = NULL)
+```
+
+## Details
+
+Type should be one of "ORA" or "GSEA".
+For functions inside reactor, please see below 'See also' (in the bottom of this doc)
+
+## Seealso
+
+`[comparison_reactor_base](comparison_reactor_base)` for the base class documentation
+`[comparison_reactor_ora](comparison_reactor_ora)` for ORA-specific functionality
+`[comparison_reactor_gsea](comparison_reactor_gsea)` for GSEA-specific functionality
+
+## Examples
+
+```r
+# ORA example
+reactor <- egt_comparison_reactor("ORA")
+reactor$append_enriched_result(ora_result1, "group_1_go")
+reactor$append_enriched_result(ora_result3, "group_3_go")
+reactor$prefilter_by_p_adj(0.05)
+reactor$make_plans(group = c("group_1_go","group_3_go"), use_value = "p")
+reactor$find_relationship(Num = 3)
+wordcloudFigure <- reactor$fetch_biological_theme()
+wordcloudFigure[[1]]
+reactor$split_by_cluster()
+reactor$do_recluster(ClusterNum = 10)
+cls_res <- reactor$get_recluster_result()
+relation_df <- reactor$fetch_relationship()
+
+# GSEA can do more with:
+gsea_reactor <- egt_comparison_reactor("GSEA")
+gsea_reactor$prefilter_by_NES(1.5)
+```
+
 # `egt_enrichment_analysis`: Perform Over-Representation Analysis (ORA)
 
 ## Description
@@ -264,6 +910,81 @@ gene_lists <- list(
 res <- egt_enrichment_analysis(gene_lists, database_Reactome(), multi_cores=0)
 ```
 
+# `egt_fetch_biological_theme`: Generate Biological Theme Wordcloud from Enrichment Results
+
+## Description
+
+Creates a wordcloud visualization from enrichment results, either from a data.frame
+or an EnrichGT_obj. For data.frames, filters by p.adjust < 0.05 by default.
+
+## Usage
+
+```r
+egt_fetch_biological_theme(x, cluster = NULL, skip_filtering = F, ...)
+```
+
+## Arguments
+
+* `x`: Input object - either a data.frame with enrichment results or an EnrichGT_obj
+* `cluster`: Cluster name/number (required if x is EnrichGT_obj)
+* `skip_filtering`: Logical, if TRUE skips filtering of data.frame by p.adjust
+* `...`: Additional arguments passed to wordcloud_generator2
+
+## Author
+
+Zhiming Ye
+
+## Value
+
+ggwordcloud object
+
+# `egt_fetch_termwise_relationship`: Fetch and visualize termwise relationships in enrichment analysis results
+
+## Description
+
+This function analyzes the relationships between enriched terms and creates a
+hierarchical clustering visualization. Please avoiding querying too large dataset.
+
+## Usage
+
+```r
+egt_fetch_termwise_relationship(
+  x,
+  database,
+  according_to = "Description",
+  ClusterNum = 4,
+  method = "ward.D2",
+  force = F,
+  maxLength = 40
+)
+```
+
+## Arguments
+
+* `x`: A character vector of terms to analyze
+* `database`: Query database. For example, `database_GO_BP(org.Hs.eg.db)`. If you are quering fused result, you can input a list like `list(database_GO_BP(org.Hs.eg.db), database_Reactome(org.Hs.eg.db))`.
+* `according_to`: Character string specifying which column to use for filtering, default is "Description"
+* `ClusterNum`: Integer specifying the number of clusters, default is 4
+* `method`: Character string specifying the hierarchical clustering method, default is "ward.D2"
+* `force`: Avoid checking the length of x. Large query will cause long calculation time and poor results.
+* `maxLength`: Warp length max than what terms
+
+## Value
+
+A list containing:
+
+## Examples
+
+```r
+# Example usage:
+result <- egt_fetch_termwise_relationship(
+  x = c("pathway1", "pathway2"),
+  database = pathway_db,
+  according_to = "Description"
+)
+result$Figure
+```
+
 # `egt_generate_quarto_report`: Export Quarto Report
 
 ## Description
@@ -275,7 +996,8 @@ Export Quarto Report
 ```r
 egt_generate_quarto_report(
   re_enrichment_results,
-  output_path = paste0(getwd(), "Report.qmd")
+  output_path = "Report.qmd",
+  type = "html"
 )
 ```
 
@@ -283,6 +1005,7 @@ egt_generate_quarto_report(
 
 * `re_enrichment_results`: The `EnrichGT_obj`, AI summarized result is more recommanded.
 * `output_path`: Path of the output qmd file (e.g., `test.qmd`)
+* `type`: export pdf or html. In default output is HTML format.
 
 ## Value
 
@@ -389,6 +1112,36 @@ Zhiming Ye, Saez-Rodriguez Lab (The decoupleR package, https://saezlab.github.io
 
 an ORA result list
 
+# `egt_llm_multi_summary`: Compare Multiple LLM Summaries
+
+## Description
+
+Generate summaries using multiple LLM models and create a comparison object.
+
+## Usage
+
+```r
+egt_llm_multi_summary(
+  x,
+  chat_list,
+  lang = "English",
+  background_knowledges = NULL,
+  comparison_prompt = NULL
+)
+```
+
+## Arguments
+
+* `x`: An EnrichGT_obj object from egt_recluster_analysis()
+* `chat_list`: A named list of LLM chat objects
+* `lang`: Language for summaries ("English" or "Chinese")
+* `background_knowledges`: Additional Reference (e.g, Papers or guide) for LLM for reference
+* `comparison_prompt`: Custom prompt for generating comparison summary
+
+## Value
+
+EnrichGT_obj with LLM_Comparison slot filled
+
 # `egt_llm_summary`: Summarize EnrichGT results using LLM
 
 ## Description
@@ -399,7 +1152,13 @@ pathway clusters and gene modules in an EnrichGT_obj object.
 ## Usage
 
 ```r
-egt_llm_summary(x, chat, lang = "English")
+egt_llm_summary(
+  x,
+  chat,
+  lang = "English",
+  model_name = NULL,
+  background_knowledges = NULL
+)
 ```
 
 ## Arguments
@@ -407,6 +1166,7 @@ egt_llm_summary(x, chat, lang = "English")
 * `x`: An EnrichGT_obj object created by `[egt_recluster_analysis](egt_recluster_analysis)`.
 * `chat`: An LLM chat object created by the `ellmer` package.
 * `lang`: Language pass to LLM. Can be `English` or `Chinese`.
+* `background_knowledges`: Additional Reference (e.g, Papers or guide) for LLM for reference. A Single Character String should be provided.
 
 ## Note
 
@@ -497,6 +1257,7 @@ egt_plot_results(
   showIDs = F,
   max_len_descript = 40,
   keepAll = F,
+  maskNoise = 3,
   ...,
   P.adj = NULL
 )
@@ -509,8 +1270,9 @@ egt_plot_results(
 * `showIDs`: bool, show pathway IDs or not. Default is FALSE
 * `max_len_descript`: the label format length, default as 40.
 * `keepAll`: Do filtering to avoid overlap of same genes or not
+* `maskNoise`: (Only works with re-enriched object) Cut-off value to mask rare population in cluster tree. Less than its value in a specifc child tree will be ignore (because it may hit only by coincidence). Set maskNoise = 0 to ignore this.
 * `...`: Other param
-* `P.adj`: If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
+* `P.adj`: (Only works with origin data.frame) If pass an origin data.frame from original enriched result, you can specify the P-adjust value cut off. If is null, default is 0.05. When passing `EnrichGT_obj`, this filter is previously done by `egt_recluster_analysis`.
 * `low.col`: the color for the lowest
 * `hi.col`: the color for the highest
 
@@ -579,7 +1341,7 @@ Zhiming Ye
 An `EnrichGT_obj` containing:
 
 * enriched_result: Filtered results data frame
-* tinytable_obj: Formatted `tinytable` table object
+* gt_object: Formatted `gt_tbl` table object
 * gene_modules: List of gene modules per cluster
 * pathway_clusters: Pathway names by cluster
 * clustering_tree: `hclust` object for visualization
@@ -595,6 +1357,104 @@ plot(res@clustering_tree)
 # GSEA example
 gsea_res <- egt_recluster_analysis(gsea_result, method="average")
 gsea_res
+```
+
+# `egt_summary`: Generate HTML Summary for EnrichGT Object
+
+## Description
+
+This function generates an HTML-formatted summary of enrichment results
+that can be displayed in RStudio viewer or web browsers.
+
+## Usage
+
+```r
+egt_summary(x, name)
+```
+
+## Arguments
+
+* `x`: An EnrichGT_obj object
+* `name`: The cluster name to summarize
+
+## Value
+
+HTML formatted summary that can be viewed with htmltools::html_print() or similar
+
+## Examples
+
+```r
+# Generate HTML summary for cluster 1
+html_summary <- egt_summary(obj, "Cluster_1")
+htmltools::html_print(html_summary)
+
+# Or view in RStudio viewer
+if (interactive()) {
+  html_summary <- egt_summary(obj, "Cluster_1")
+  print(html_summary)
+}
+```
+
+# `egt_web_interface`: Launch EnrichGT Web Interface
+
+## Description
+
+Launch an interactive Shiny web application that provides a user-friendly interface
+for performing enrichment analysis using EnrichGT package functions.
+
+## Usage
+
+```r
+egt_web_interface(
+  LLM = NULL,
+  port = NULL,
+  host = "127.0.0.1",
+  launch.browser = TRUE
+)
+```
+
+## Arguments
+
+* `LLM`: An optional LLM chat object created by the `ellmer` package.
+If provided, enables LLM-powered summarization of recluster analysis results.
+If NULL (default), LLM features are disabled.
+* `port`: Port number for the application. If NULL (default), a random available port will be used.
+* `host`: IP address that the application should listen on. Default is "127.0.0.1" (localhost).
+* `launch.browser`: Logical. If TRUE (default), the web browser will be launched automatically.
+
+## Details
+
+The web interface includes major analysis modules in EnrichGT.
+
+## Author
+
+Zhiming Ye
+
+## Seealso
+
+`[egt_enrichment_analysis](egt_enrichment_analysis)`, `[egt_gsea_analysis](egt_gsea_analysis)`,
+`[egt_recluster_analysis](egt_recluster_analysis)`, `[egt_plot_results](egt_plot_results)`, `[egt_llm_summary](egt_llm_summary)`
+
+## Value
+
+Starts a Shiny application
+
+## Examples
+
+```r
+# Launch the web interface with default settings
+egt_web_interface()
+
+# Launch with LLM support
+library(ellmer)
+chat <- chat_deepseek(api_key = "your_api_key", model = "deepseek-chat")
+egt_web_interface(LLM = chat)
+
+# Launch on a specific port
+egt_web_interface(port = 3838)
+
+# Launch without opening browser automatically
+egt_web_interface(launch.browser = FALSE)
 ```
 
 # `genes_with_weights`: Create a ranked gene list for GSEA analysis

@@ -1,5 +1,5 @@
 ---
-title: "Visualize results through HTML reports or figures"
+title: "Visualize and Create Reports"
 format: 
   html:
     code-overflow: wrap
@@ -27,33 +27,55 @@ resGSEA<-readRDS("resGSEA.rds")
 re_enrich<-readRDS("re_enrich.rds")
 ```
 
-# HTML reports {#html-reports-gt-table}
+# Dynamic document reports in HTML or Latex {#html-reports-gt-table}
 
-## Inline or in dynamic documents
+## Full Result: Inline or in dynamic documents
 
-Because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `tinytable` HTML tables. This only supports the re-enriched results.
+Because of the messy result table is hardly to read, `EnrichGT` help you convert it into pretty `gt table` . This only supports the re-enriched results.
 
-You can simple print by input the object name of re-enriched object or fused object to R console, to show the table. In IDE like `RStudio` and `Positron`, you can view the table in `View` window. You can also integrate to R-based publish systems like `rmarkdown`, `Quarto` or `litedown`. Like this: The default setting is optimized for HTML reports. For Latex reports, you may refer to the document of `tinytable`.
+You can simple print by input the object name of re-enriched object or fused object to R console, to show the table. In IDE like `RStudio` and `Positron`, you can view the table in `View` window. You can also integrate to dynamic document publish systems like `rmarkdown` and `Quarto` which support HTML widget. Latex output is also supported.
 
-```{r, eval = knitr::is_html_output()}
-re_enrich
+To add the result to your dynamic document, simply call the second slot in your `rmarkdown` or `Quarto` document using `@gt_object`, like this :
+
+```{r}
+re_enrich@gt_object
 ```
 
-This just shows the second slot inside the `EnrichGT_obj` object. The second slot - `tinytable_obj` is a pure object of `tinytable` package, you can use any [function](https://vincentarelbundock.github.io/tinytable/vignettes/tinytable.html) on it.
+This just shows the second slot inside the `EnrichGT_obj` object. The second slot - `gt_object` is a pure object of `gt table` package, you can use any [function](https://vincentarelbundock.github.io/gt%20table/vignettes/gt%20table.html) on it.
 
-For further usage of `tinytable` package, please refer to <https://vincentarelbundock.github.io/tinytable/vignettes/tinytable.html>.
+For further usage of `gt table` package, please refer to [gt package website](https://gt.rstudio.com/reference/index.html#export-and-extraction-functions).
 
 See re-enrichment example for further demo.
 
-## Quarto full-report
+## Each Cluster: HTML Widgets
+
+If you want to show `cluster 1` in your documents(the publish system or IDE should support HTML widgets, like RStudio), you can use one of below:
+
+``` r
+egt_summary(deepseekAnno, "1")
+egt_summary(deepseekAnno, 1)
+egt_summary(deepseekAnno, "Cluster_1")
+```
+
+In `Quarto` or `rmarkdown`, you can use `#| output: asis` header in code chunk and print it to show HTML widgets.
+
+![](images/clipboard-1084314783.png)
+
+```{r}
+#| output: asis
+HTMLres <- egt_summary(re_enrich, "1")
+HTMLres
+```
+
+## Quarto Reports
 
 Function `egt_generate_quarto_report()` can help you convert re-enrichment object to an all-in-one Quarto document containing all enrichment results. You can use `RStudio` or `Positron` to knit them (preview) into HTML document.
 
-![](images/paste-3.png)
+![](images/clipboard-1284614460.png){width="1000"}
 
 # Ploting functions
 
-HTML `tinytable` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
+HTML `gt table` table satisfied most of things, but for others. Though we don't want this package become complex (i.e., you can simple draw your figure using ggplot2 for enriched tables by yourself.) But we still provide limited figure ploting functions.
 
 ## Basic result plot
 

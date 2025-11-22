@@ -64,35 +64,85 @@ Some suggestions:
 1.  You may choose a cost-effective LLM model, as this type of annotation requires multiple calls. Also, make sure that both the LLM and the network are as stable as possible in order to obtain all the results (although `EnrichGT` has already been set to automatically retry multiple times).
 2.  Non-reflective models or fast-thinking models are generally better. Slow-thinking models (such as `DeepSeek-R1`) may result in long waiting times.
 3.  It is best to choose an LLM model that is relatively intelligent, has a substantial knowledge base, and exhibits low hallucination rates. In our (albeit limited) experience, although `GPT-4o` performs worse than `DeepSeek-V3-0324` in most benchmark tests, it may produce more reliable results in some cases due to the latter’s higher hallucination rate. You are free to choose whichever large model you prefer.
-4.  **NO** system prompts. And please adjust your LLM's tempretures according to your provider carefully. 
+4.  **NO** system prompts. And please adjust your LLM's tempretures according to your provider carefully.
+
+LLM-generated interpretations should be subject to expert review and literature validation, as is standard practice in computational biology workflows.
 
 ## Summrize your results using LLM
 
 Just execute:
 
 ``` r
+chat <- chat_deepseek(api_key = dsAPI, model = "deepseek-chat", system_prompt = "")
 re_enrichment_results <- egt_llm_summary(re_enrichment_results, chat)
 ```
 
 ![](images/paste-2.png){width="700"}
 
-A typical run in `DeepSeek-V3-0324` will use \~ 6 mins.
+A typical run in `DeepSeek-V3-0324` will use \~ 3 mins.
 
-After complete, you can use `$` operator to access annotated results. For example, the annotation of `Cluster_1`:
+::: callout-tip
+### Use backgrounds knowledge to assist LLMs
+
+You can use `background_knowledges` to add background knowledge for LLMs to refer (e.g, papers, your opinions ...). Please paste them into a single character (string) value and pass it into EnrichGT. For example:
+
+``` r
+chat <- chat_deepseek(api_key = dsAPI, model = "deepseek-chat", system_prompt = "")
+re_enrich_anno_with_ref <- egt_llm_summary(re_enrichment_results, chat, background_knowledges = paste(readLines("paperReference.txt"), collapse = " "))
+```
+:::
+
+## Access Results
+
+### Through Morden IDEs
+
+EnrichGT works well with IDEs `RStudio` and `Positron`. You can use `egt_summary()` function to see the LLM summaries.
+
+For example, if you want to view `cluster 1`, you can use one of below:
+
+``` r
+egt_summary(deepseekAnno, "1")
+egt_summary(deepseekAnno, 1)
+egt_summary(deepseekAnno, "Cluster_1")
+```
+
+Then you can see your IDE's Viewer will automaticlly open and show a HTML page.
+
+::::: columns
+::: {.column width="50%"}
+![](images/clipboard-1481631269.png)
+:::
+
+::: {.column width="50%"}
+![](images/clipboard-3664024232.png)
+:::
+:::::
+
+### Through R Console
+
+In console, after complete, you can use `$` operator to access annotated results. For example, the annotation of `Cluster_1`:
 
 ![](images/paste-1.png){width="700"}
 
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-#| error: false
-suppressPackageStartupMessages(library(EnrichGT))
-llm_annotated_obj <- readRDS("/Users/zhimingye/Documents/4Fun/EnrichGT/LLM_re_enrichment_results.rds")
-```
-
-```{r}
+``` r
 llm_annotated_obj$Cluster_1
 ```
 
-All the results are saved in the `result@LLM_Annotation` slot.
+![](images/clipboard-2287479205.png)
+
+# Compare annotations from different LLMs
+
+There's an old Chinese saying: 'Listening to all sides brings enlightenment.' A single LLM may lead to misunderstandings due to model limitations, but as another saying goes, 'Three cobblers with their wits combined equal Zhuge Liang the master strategist'—meaning collective wisdom surpasses individual brilliance. Therefore, we provide the functionality to compare multiple LLMs.
+
+``` r
+Compare_anno <- egt_llm_multi_summary(
+  re_enrich, 
+  chat_list = list(
+    `deepseek-v3.2-exp` = deepseekAI, 
+    `qwen3-max` = QwenAI), 
+  background_knowledges = paste(readLines("paperReference.txt"), collapse = " "))
+
+egt_summary(Compare_anno, "1") # Show results
+```
+
+![](images/clipboard-2545298605.png)

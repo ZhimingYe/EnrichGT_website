@@ -10,20 +10,20 @@ toc-depth: 3
 toc-expand: true
 ---
 
-> Basic enrichment analysis involves performing a batch “dictionary lookup” for a set of genes to determine their associations. The most commonly used method is **over-representation analysis (ORA)**. If you also have information on weights, then **Gene Set Enrichment Analysis (GSEA)** is another classic choice.
+Basic enrichment analysis involves performing a batch “dictionary lookup” for a set of genes to determine their associations. The most commonly used method is **over-representation analysis (ORA)**. If you also have information on weights, then **Gene Set Enrichment Analysis (GSEA)** is another classic choice.
 
 # Enrichment of genes
 
-This is a `C++` accelerated ORA tool. The only things you need is your favourite gene symbols. If is all prepared, then load a database, run it!
+This is an accelerated ORA tool. The only things you need is your favourite gene symbols. If is all prepared, then load a database, run it!
 
 ::: {.callout-note collapse="true"}
-#### Difference from other tools
+#### Design Principle
 
-Compared to the most popular clusterProfiler, the functions of EnrichGT differ slightly. This is mainly to accommodate wet lab researchers. First, most beginners are confused by the default input of clusterProfiler, which is “ENTREZ ID.” Most people familiar with biology are used to Gene Symbols, and even Ensembl IDs are not widely known, let alone a series of seemingly random numbers. Therefore, EnrichGT uses Gene Symbol as the default input, seamlessly integrating with most downstream results from various companies, making it more suitable for non-experts in the lab.
+Functions in `EnrichGT` is mainly to accommodate wet lab researchers. First, most beginners are confused by “ENTREZ ID” used by most of tools. And people often much familiar with biology are used to Gene Symbols, and even Ensembl IDs are not widely known, let alone a series of seemingly random numbers. Therefore, EnrichGT uses Gene Symbol as the default input, seamlessly integrating with most downstream results from various companies, making it more suitable for non-experts in the lab.
 
-Second, clusterProfiler outputs an S4 object, which may be too complex for beginners (this is no joke); whereas EnrichGT outputs a simple table. The time of non-experts is precious, so I made these two adjustments. The only downside is that the GSEA peak plot is difficult to generate, but in reality, we focus more on NES and p-values, and in this case, bar plots are more convincing.
+While other tools often output S4 objects, which may be too complex for beginners; whereas EnrichGT outputs a simple table. The time of non-experts is precious, so I made these two adjustments. The only downside is that the GSEA peak plot is difficult to generate, but in reality, we focus more on NES and p-values, and in this case, bar plots are more convincing.
 
-Furthermore, The pre-processing step of the hypergeometric test in EnrichGT’s ORA function (which determines overlap) is accelerated using hash tables in C++, making it over five times faster than `clusterProfiler::enricher()`, which is a pure R implementation.
+Furthermore, The pre-processing step of the hypergeometric test in EnrichGT’s ORA function (which determines overlap) is accelerated using hash tables in C++, making it over five times faster than other pure R implementation.
 :::
 
 ::: {.callout-note collapse="true"}
@@ -105,7 +105,7 @@ For visualize, see [ploting ORA results](visualize.qmd) for details. You can use
 
 # Enrichment of weighted genes (GSEA)
 
-Genes with specific weights (e.g. the log2FC) can use GSEA method. It should input a pre-ranked geneset. This use `C++` accelerated `fgsea::fgsea()` as backend, so it is also very fast.
+Genes with specific weights (e.g. the log2FC) can use GSEA method. It should input a pre-ranked geneset. This use `fgsea::fgsea()` as backend, it is also very fast.
 
 This provides a quick display of NES, p-values, and leading-edge genes. This function uses the same backend as the industry-standard `clusterProfiler` (it is also implemented using the [fgsea](https://github.com/ctlab/fgsea) package). However, `EnrichGT` does not delve as deeply as `clusterProfiler` and lacks advanced visualization capabilities. While it may not be sufficient for bioinformatics experts, the current implementation is adequate for wet-lab researchers. If comprehensive analysis is required, consider using `clusterProfiler.` However, if you only need an overview and reclustering, `EnrichGT` may be enough.
 
@@ -145,3 +145,4 @@ saveRDS(DEGexample,file="DEGexample.rds")
 saveRDS(ora_result,file="ora_result.rds")
 saveRDS(resGSEA,file="resGSEA.rds")
 ```
+
